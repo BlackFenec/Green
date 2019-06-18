@@ -30,3 +30,5 @@
 *.exe
 *.out
 *.app
+/Green/x64/Debug
+/Green/.vs/Green/v16
