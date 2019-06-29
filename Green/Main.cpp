@@ -18,9 +18,9 @@ int main(int argc, char** argv)
 	int length = file.tellg();
 	file.seekg(0, file.beg);
 
-	char* buffer = new char[length];
+	unsigned char* buffer = new unsigned char[length];
 
-	file.read(buffer, length);
+	file.read((char*)buffer, length);
 	file.close();
 
 	int pc = 0;

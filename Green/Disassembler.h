@@ -5,7 +5,7 @@ class Disassembler
 {
 public :
 
-	int Disassemble8080Op(char* codeBuffer, int pc);
+	int Disassemble8080Op(unsigned char* codeBuffer, int pc);
 };
 
 #endif // !DISASSEMBLER_H_

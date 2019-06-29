@@ -32,3 +32,4 @@
 *.app
 /Green/x64/Debug
 /Green/.vs/Green/v16
+/roms/invaders.rom

@@ -2,9 +2,9 @@
 #include <iostream>
 #include <string>
 
-int Disassembler::Disassemble8080Op(char* codeBuffer, int pc)
+int Disassembler::Disassemble8080Op(unsigned char* codeBuffer, int pc)
 {
-	char* code = &codeBuffer[pc];
+	unsigned char *code = &codeBuffer[pc];
 	int opBytes = 1;
 	printf("%04x ", pc);
 	switch (*code)
@@ -71,7 +71,7 @@ int Disassembler::Disassemble8080Op(char* codeBuffer, int pc)
 		case 0x3b: printf("DCX	SP"); break;
 		case 0x3c: printf("INR	A"); break;
 		case 0x3d: printf("DCR	A"); break;
-		case 0x3e: printf("MVI    A,#0x%02x", code[1]); opBytes = 2; break;
+		case 0x3e: printf("MVI    A,#$%02x", code[1]); opBytes = 2; break;
 		case 0x3f: printf("CMC"); break;
 		case 0x40: printf("MOV	B,B"); break;
 		case 0x41: printf("MOV	B,C"); break;
@@ -207,7 +207,7 @@ int Disassembler::Disassemble8080Op(char* codeBuffer, int pc)
 		case 0xc3: printf("JMP    $%02x%02x", code[2], code[1]); opBytes = 3; break;
 		case 0xc4: printf("CNZ    $%02x%02x", code[2], code[1]); opBytes = 3; break;
 		case 0xc5: printf("PUSH	B"); break;
-		case 0xc6: printf("ADI	D8,#$%02x", code[1]); opBytes = 2; break;
+		case 0xc6: printf("ADI	#$%02x", code[1]); opBytes = 2; break;
 		case 0xc7: printf("RST	0"); break;
 		case 0xc8: printf("RZ"); break;
 		case 0xc9: printf("RET"); break;
@@ -215,20 +215,20 @@ int Disassembler::Disassemble8080Op(char* codeBuffer, int pc)
 		case 0xcb: printf("NOP"); break;
 		case 0xcc: printf("CZ    $%02x%02x", code[2], code[1]); opBytes = 3; break;
 		case 0xcd: printf("CALL    $%02x%02x", code[2], code[1]); opBytes = 3; break;
-		case 0xce: printf("ACI D8,#$%02x", code[1]); opBytes = 2; break;
+		case 0xce: printf("ACI #$%02x", code[1]); opBytes = 2; break;
 		case 0xcf: printf("RST	1"); break;
 		case 0xd0: printf("RNC"); break;
 		case 0xd1: printf("POP	D"); break;
 		case 0xd2: printf("JNC    $%02x%02x", code[2], code[1]); opBytes = 3; break;
-		case 0xd3: printf("OUT D8,#$%02x", code[1]); opBytes = 2; break;
+		case 0xd3: printf("OUT #$%02x", code[1]); opBytes = 2; break;
 		case 0xd4: printf("CNC    $%02x%02x", code[2], code[1]); opBytes = 3; break;
 		case 0xd5: printf("PUSH	D"); break;
-		case 0xd6: printf("SUI	D8,#$%02x", code[1]); opBytes = 2; break;
+		case 0xd6: printf("SUI	#$%02x", code[1]); opBytes = 2; break;
 		case 0xd7: printf("RST	2"); break;
 		case 0xd8: printf("RC"); break;
 		case 0xd9: printf("NOP"); break;
 		case 0xda: printf("JC    $%02x%02x", code[2], code[1]); opBytes = 3; break;
-		case 0xdb: printf("IN D8,#$%02x", code[1]); opBytes = 2; break;
+		case 0xdb: printf("IN	#$%02x", code[1]); opBytes = 2; break;
 		case 0xdc: printf("CC    $%02x%02x", code[2], code[1]); opBytes = 3; break;
 		case 0xdd: printf("NOP"); break;
 		case 0xde: printf("SBI	D8,#$%02x", code[1]); opBytes = 2; break;
@@ -239,7 +239,7 @@ int Disassembler::Disassemble8080Op(char* codeBuffer, int pc)
 		case 0xe3: printf("XTHL"); break;
 		case 0xe4: printf("CPO    $%02x%02x", code[2], code[1]); opBytes = 3; break;
 		case 0xe5: printf("PUSH	H"); break;
-		case 0xe6: printf("ANI	D8,#$%02x", code[1]); opBytes = 2; break;
+		case 0xe6: printf("ANI	#$%02x", code[1]); opBytes = 2; break;
 		case 0xe7: printf("RST	4"); break;
 		case 0xe8: printf("RPE"); break;
 		case 0xe9: printf("PCHL"); break;
@@ -247,7 +247,7 @@ int Disassembler::Disassemble8080Op(char* codeBuffer, int pc)
 		case 0xeb: printf("XCHG"); break;
 		case 0xec: printf("CPE    $%02x%02x", code[2], code[1]); opBytes = 3; break;
 		case 0xed: printf("NOP"); break;
-		case 0xee: printf("XRI	D8,#$%02x", code[1]); opBytes = 2; break;
+		case 0xee: printf("XRI	#$%02x", code[1]); opBytes = 2; break;
 		case 0xef: printf("RST	5"); break;
 		case 0xf0: printf("RP"); break;
 		case 0xf1: printf("POP	PSW"); break;
@@ -255,7 +255,7 @@ int Disassembler::Disassemble8080Op(char* codeBuffer, int pc)
 		case 0xf3: printf("DI"); break;
 		case 0xf4: printf("CP    $%02x%02x", code[2], code[1]); opBytes = 3; break;
 		case 0xf5: printf("PUSH	PSW"); break;
-		case 0xf6: printf("ORI	D8,#$%02x", code[1]); opBytes = 2; break;
+		case 0xf6: printf("ORI	#$%02x", code[1]); opBytes = 2; break;
 		case 0xf7: printf("RST	6"); break;
 		case 0xf8: printf("RM"); break;
 		case 0xf9: printf("SPHL"); break;
@@ -263,7 +263,7 @@ int Disassembler::Disassemble8080Op(char* codeBuffer, int pc)
 		case 0xfb: printf("EI"); break;
 		case 0xfc: printf("CM    $%02x%02x", code[2], code[1]); opBytes = 3; break;
 		case 0xfd: printf("NOP"); break;
-		case 0xfe: printf("CPI	D8,#$%02x", code[1]); opBytes = 2; break;
+		case 0xfe: printf("CPI	#$%02x", code[1]); opBytes = 2; break;
 		case 0xff: printf("RST	7"); break;
 	}
 
