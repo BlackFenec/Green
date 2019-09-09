@@ -779,7 +779,13 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	case 0xbd: printf("CMP	L"); break;
 	case 0xbe: printf("CMP	M"); break;
 	case 0xbf: printf("CMP	A"); break;
-	case 0xc0: printf("RNZ"); break;
+	case 0xc0: 
+	{
+		if (0 == state->cc.z)
+			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
+		state->sp += 2;
+	}
+	break;
 	case 0xc1: printf("POP	B"); break;
 	case 0xc2: 
 	{
@@ -792,7 +798,20 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	case 0xc3:
 		state->pc = (code[2] << 8) | code[1];
 		break;
-	case 0xc4: printf("CNZ    $%02x%02x", code[2], code[1]); opBytes = 3; break;
+	case 0xc4: 
+	{
+		if (0 == state->cc.z)
+		{
+			uint16_t ret = state->pc + 2;
+			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
+			state->memory[state->sp - 2] = (ret & 0xff);
+			state->sp = state->sp - 2;
+			state->pc = (code[2] << 8) | code[1];
+		}
+		else
+			state->pc += 2;
+	}
+	break;
 	case 0xc5: printf("PUSH	B"); break;
 	case 0xc6:
 	{
@@ -805,8 +824,19 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xc7: printf("RST	0"); break;
-	case 0xc8: printf("RZ"); break;
-	case 0xc9: printf("RET"); break;
+	case 0xc8: 
+	{
+		if(1 == state->cc.z)
+			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
+		state->sp += 2;
+	}
+	break;
+	case 0xc9:
+	{
+		state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
+		state->sp += 2;
+	}
+	break;
 	case 0xca: 
 	{
 		if (1 == state->cc.z)
@@ -816,8 +846,29 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xcb: break;
-	case 0xcc: printf("CZ    $%02x%02x", code[2], code[1]); opBytes = 3; break;
-	case 0xcd: printf("CALL    $%02x%02x", code[2], code[1]); opBytes = 3; break;
+	case 0xcc:
+	{
+		if (1 == state->cc.z)
+		{
+			uint16_t ret = state->pc + 2;
+			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
+			state->memory[state->sp - 2] = (ret & 0xff);
+			state->sp = state->sp - 2;
+			state->pc = (code[2] << 8) | code[1];
+		}
+		else
+			state->pc += 2;
+	}
+	break;
+	case 0xcd:
+	{
+		uint16_t ret = state->pc + 2;
+		state->memory[state->sp - 1] = (ret >> 8) & 0xff;
+		state->memory[state->sp - 2] = (ret & 0xff);
+		state->sp = state->sp - 2;
+		state->pc = (code[2] << 8) | code[1];
+	}
+	break;
 	case 0xce: 
 	{
 		uint16_t answer = (uint16_t)state->a + (uint16_t)code[1] + (uint16_t)state->cc.cy;
@@ -829,7 +880,13 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xcf: printf("RST	1"); break;
-	case 0xd0: printf("RNC"); break;
+	case 0xd0: 
+	{
+		if (0 == state->cc.cy)
+			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
+		state->sp += 2;
+	}
+	break;
 	case 0xd1: printf("POP	D"); break;
 	case 0xd2: 
 	{
@@ -840,7 +897,20 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xd3: printf("OUT #$%02x", code[1]); opBytes = 2; break;
-	case 0xd4: printf("CNC    $%02x%02x", code[2], code[1]); opBytes = 3; break;
+	case 0xd4: 
+	{
+		if (0 == state->cc.cy)
+		{
+			uint16_t ret = state->pc + 2;
+			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
+			state->memory[state->sp - 2] = (ret & 0xff);
+			state->sp = state->sp - 2;
+			state->pc = (code[2] << 8) | code[1];
+		}
+		else
+			state->pc += 2;
+	}
+	break;
 	case 0xd5: printf("PUSH	D"); break;
 	case 0xd6:
 	{
@@ -853,7 +923,13 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xd7: printf("RST	2"); break;
-	case 0xd8: printf("RC"); break;
+	case 0xd8: 
+	{
+		if (1 == state->cc.cy)
+			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
+		state->sp += 2;
+	}
+	break;
 	case 0xd9: break;
 	case 0xda:
 	{
@@ -864,11 +940,30 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xdb: printf("IN	#$%02x", code[1]); opBytes = 2; break;
-	case 0xdc: printf("CC    $%02x%02x", code[2], code[1]); opBytes = 3; break;
+	case 0xdc: 
+	{
+		if (1 == state->cc.cy)
+		{
+			uint16_t ret = state->pc + 2;
+			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
+			state->memory[state->sp - 2] = (ret & 0xff);
+			state->sp = state->sp - 2;
+			state->pc = (code[2] << 8) | code[1];
+		}
+		else
+			state->pc += 2;
+	}
+	break;
 	case 0xdd: break;
 	case 0xde: printf("SBI	D8,#$%02x", code[1]); opBytes = 2; break;
 	case 0xdf: printf("RST	3"); break;
-	case 0xe0: printf("RPO"); break;
+	case 0xe0: 
+	{
+		if (0 == state->cc.p)
+			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
+		state->sp += 2;
+	}
+	break;
 	case 0xe1: printf("POP	H"); break;
 	case 0xe2: 
 	{
@@ -879,11 +974,30 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xe3: printf("XTHL"); break;
-	case 0xe4: printf("CPO    $%02x%02x", code[2], code[1]); opBytes = 3; break;
+	case 0xe4: 
+	{
+		if (0 == state->cc.p)
+		{
+			uint16_t ret = state->pc + 2;
+			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
+			state->memory[state->sp - 2] = (ret & 0xff);
+			state->sp = state->sp - 2;
+			state->pc = (code[2] << 8) | code[1];
+		}
+		else
+			state->pc += 2;
+	}
+	break;
 	case 0xe5: printf("PUSH	H"); break;
 	case 0xe6: printf("ANI	#$%02x", code[1]); opBytes = 2; break;
 	case 0xe7: printf("RST	4"); break;
-	case 0xe8: printf("RPE"); break;
+	case 0xe8: 
+	{
+		if (1 == state->cc.p)
+			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
+		state->sp += 2;
+	}
+	break;
 	case 0xe9: printf("PCHL"); break;
 	case 0xea: 
 	{
@@ -894,11 +1008,30 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xeb: printf("XCHG"); break;
-	case 0xec: printf("CPE    $%02x%02x", code[2], code[1]); opBytes = 3; break;
+	case 0xec: 
+	{
+		if (1 == state->cc.p)
+		{
+			uint16_t ret = state->pc + 2;
+			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
+			state->memory[state->sp - 2] = (ret & 0xff);
+			state->sp = state->sp - 2;
+			state->pc = (code[2] << 8) | code[1];
+		}
+		else
+			state->pc += 2;
+	}
+	break;
 	case 0xed: break;
 	case 0xee: printf("XRI	#$%02x", code[1]); opBytes = 2; break;
 	case 0xef: printf("RST	5"); break;
-	case 0xf0: printf("RP"); break;
+	case 0xf0: 
+	{
+		if (0 == state->cc.s)
+			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
+		state->sp += 2;
+	}
+	break;
 	case 0xf1: printf("POP	PSW"); break;
 	case 0xf2: 
 	{
@@ -909,11 +1042,30 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xf3: printf("DI"); break;
-	case 0xf4: printf("CP    $%02x%02x", code[2], code[1]); opBytes = 3; break;
+	case 0xf4: 
+	{
+		if (0 == state->cc.s)
+		{
+			uint16_t ret = state->pc + 2;
+			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
+			state->memory[state->sp - 2] = (ret & 0xff);
+			state->sp = state->sp - 2;
+			state->pc = (code[2] << 8) | code[1];
+		}
+		else
+			state->pc += 2;
+	}
+	break;
 	case 0xf5: printf("PUSH	PSW"); break;
 	case 0xf6: printf("ORI	#$%02x", code[1]); opBytes = 2; break;
 	case 0xf7: printf("RST	6"); break;
-	case 0xf8: printf("RM"); break;
+	case 0xf8: 
+	{
+		if (1 == state->cc.s)
+			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
+		state->sp += 2;
+	}
+	break;
 	case 0xf9: printf("SPHL"); break;
 	case 0xfa: 
 	{
@@ -924,7 +1076,20 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xfb: printf("EI"); break;
-	case 0xfc: printf("CM    $%02x%02x", code[2], code[1]); opBytes = 3; break;
+	case 0xfc: 
+	{
+		if (1 == state->cc.s)
+		{
+			uint16_t ret = state->pc + 2;
+			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
+			state->memory[state->sp - 2] = (ret & 0xff);
+			state->sp = state->sp - 2;
+			state->pc = (code[2] << 8) | code[1];
+		}
+		else
+			state->pc += 2;
+	}
+	break;
 	case 0xfd: break;
 	case 0xfe: printf("CPI	#$%02x", code[1]); opBytes = 2; break;
 	case 0xff: printf("RST	7"); break;
