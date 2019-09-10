@@ -49,7 +49,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = (uint16_t)state->b++;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->b = answer & 0xff;
 	}
 	break;
@@ -58,11 +58,11 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = (uint16_t)state->b--;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->b = answer & 0xff;
 	}
 	break;
-	case 0x06: printf("MVI    B,#$%02x", code[1]); opBytes = 2; break;
+	case 0x06: printf("MVI    B,#$%02x", code[1]); break;
 	case 0x07: printf("RLC"); break;
 	case 0x08: break;
 	case 0x09: 
@@ -88,7 +88,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = (uint16_t)state->c++;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->c = answer & 0xff;
 	}
 	break;
@@ -97,24 +97,24 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = (uint16_t)state->c--;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->c = answer & 0xff;
 	}
 	break;
-	case 0x0e: printf("MVI	C,#$%02x", code[1]); opBytes = 2; break;
+	case 0x0e: printf("MVI	C,#$%02x", code[1]); break;
 	case 0x0f: 
 	{
 		uint8_t x = state->a & code[1];
 		state->cc.z = (x == 0);
 		state->cc.s = (0x80 == (x & 0x80));
-		state->cc.p = parity(x, 8);
+		state->cc.p = Parity(x, 8);
 		state->cc.cy = 0;   
 		state->a = x;
 		state->pc++;  
 	}
 	break;
 	case 0x10: break;
-	case 0x11: printf("LXI	D,#$%02x%02x", code[2], code[1]); opBytes = 3; break;
+	case 0x11: printf("LXI	D,#$%02x%02x", code[2], code[1]);  break;
 	case 0x12: printf("STAX	D"); break;
 	case 0x13: 
 	{
@@ -128,7 +128,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = (uint16_t)state->d++;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->d = answer & 0xff;
 	}
 	break;
@@ -137,11 +137,11 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = (uint16_t)state->d--;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->d = answer & 0xff;
 	}
 	break;
-	case 0x16: printf("MVI	D,#$%02x", code[1]); opBytes = 2; break;
+	case 0x16: printf("MVI	D,#$%02x", code[1]);  break;
 	case 0x17: printf("RAL"); break;
 	case 0x18: break;
 	case 0x19:
@@ -167,7 +167,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = (uint16_t)state->e++;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->e = answer & 0xff;
 	}
 	break;
@@ -176,11 +176,11 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = (uint16_t)state->e--;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->e = answer & 0xff;
 	}
 	break;
-	case 0x1e: printf("MVI	E,#$%02x", code[1]); opBytes = 2; break;
+	case 0x1e: printf("MVI	E,#$%02x", code[1]);  break;
 	case 0x1f: 
 	{
 		uint8_t x = state->a;
@@ -189,8 +189,8 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0x20: printf("RIM"); break;
-	case 0x21: printf("LXI	H,#$%02x%02x", code[2], code[1]); opBytes = 3; break;
-	case 0x22: printf("SHLD    $%02x%02x", code[2], code[1]); opBytes = 3; break;
+	case 0x21: printf("LXI	H,#$%02x%02x", code[2], code[1]);  break;
+	case 0x22: printf("SHLD    $%02x%02x", code[2], code[1]);  break;
 	case 0x23: 
 	{
 		state->l++;
@@ -203,7 +203,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = (uint16_t)state->h++;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->h = answer & 0xff;
 	}
 	break;
@@ -212,11 +212,11 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = (uint16_t)state->h--;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->h = answer & 0xff;
 	}
 	break;
-	case 0x26: printf("MVI	H,#$%02x", code[1]); opBytes = 2; break;
+	case 0x26: printf("MVI	H,#$%02x", code[1]);  break;
 	case 0x27: printf("DAA"); break;
 	case 0x28: break;
 	case 0x29:
@@ -228,7 +228,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.cy = ((res & 0xffff0000) > 0);
 	}
 	break;
-	case 0x2a: printf("LHLD    $%02x%02x", code[2], code[1]); opBytes = 3; break;
+	case 0x2a: printf("LHLD    $%02x%02x", code[2], code[1]);  break;
 	case 0x2b: 
 	{
 		state->l--;
@@ -241,7 +241,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = (uint16_t)state->l++;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->l = answer & 0xff;
 	}
 	break;
@@ -250,17 +250,17 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = (uint16_t)state->l--;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->l = answer & 0xff;
 	}
 	break;
-	case 0x2e: printf("MVI	L,#$%02x", code[1]); opBytes = 2; break;
+	case 0x2e: printf("MVI	L,#$%02x", code[1]);  break;
 	case 0x2f: 
 		state->a = ~state->a;
 		break;
 	case 0x30: printf("SIM"); break;
-	case 0x31: printf("LXI SP,#$%02x%02x", code[2], code[1]); opBytes = 3; break;
-	case 0x32: printf("STA    $%02x%02x", code[2], code[1]); opBytes = 3; break;
+	case 0x31: printf("LXI SP,#$%02x%02x", code[2], code[1]);  break;
+	case 0x32: printf("STA    $%02x%02x", code[2], code[1]);  break;
 	case 0x33: printf("INX	SP"); break;
 	case 0x34: 
 	{
@@ -268,7 +268,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = state->memory[offset]++;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->memory[offset] = answer & 0xff;
 	}
 	break;
@@ -278,21 +278,21 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = state->memory[offset]--;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->memory[offset] = answer & 0xff;
 	}
-	case 0x36: printf("MVI	M,#$%02x", code[1]); opBytes = 2; break;
+	case 0x36: printf("MVI	M,#$%02x", code[1]);  break;
 	case 0x37: printf("STC"); break;
 	case 0x38: break;
 	case 0x39: printf("DAD	SP"); break;
-	case 0x3a: printf("LDA    $%02x%02x", code[2], code[1]); opBytes = 3; break;
+	case 0x3a: printf("LDA    $%02x%02x", code[2], code[1]);  break;
 	case 0x3b: printf("DCX	SP"); break;
 	case 0x3c: 
 	{
 		uint16_t answer = (uint16_t)state->a++;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -301,11 +301,11 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint16_t answer = (uint16_t)state->a--;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
-	case 0x3e: printf("MVI    A,#$%02x", code[1]); opBytes = 2; break;
+	case 0x3e: printf("MVI    A,#$%02x", code[1]);  break;
 	case 0x3f: printf("CMC"); break;
 	case 0x40: state->b = state->c; break; 
 	case 0x41: state->b = state->c; break; 
@@ -447,7 +447,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -457,7 +457,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -467,7 +467,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -477,7 +477,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -487,7 +487,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -497,7 +497,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -508,7 +508,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -518,7 +518,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -528,7 +528,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -538,7 +538,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -548,7 +548,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -558,7 +558,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -568,7 +568,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -578,7 +578,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -589,7 +589,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -599,7 +599,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -609,7 +609,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -619,7 +619,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -629,7 +629,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -639,7 +639,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -649,7 +649,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -659,7 +659,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -670,7 +670,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -680,7 +680,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -690,7 +690,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -700,7 +700,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -710,7 +710,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -720,7 +720,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -730,7 +730,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -740,7 +740,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -751,7 +751,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -761,7 +761,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -837,7 +837,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -893,7 +893,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -914,7 +914,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 			state->pc += 2;
 	}
 	break;
-	case 0xd3: printf("OUT #$%02x", code[1]); opBytes = 2; break;
+	case 0xd3: printf("OUT #$%02x", code[1]);  break;
 	case 0xd4: 
 	{
 		if (0 == state->cc.cy)
@@ -936,7 +936,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff);
+		state->cc.p = Parity(answer & 0xff, 8);
 		state->a = answer & 0xff;
 	}
 	break;
@@ -957,7 +957,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 			state->pc += 2;
 	}
 	break;
-	case 0xdb: printf("IN	#$%02x", code[1]); opBytes = 2; break;
+	case 0xdb: printf("IN	#$%02x", code[1]);  break;
 	case 0xdc: 
 	{
 		if (1 == state->cc.cy)
@@ -973,7 +973,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xdd: break;
-	case 0xde: printf("SBI	D8,#$%02x", code[1]); opBytes = 2; break;
+	case 0xde: printf("SBI	D8,#$%02x", code[1]);  break;
 	case 0xdf: printf("RST	3"); break;
 	case 0xe0: 
 	{
@@ -1012,7 +1012,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		uint8_t x = state->a & code[1];
 		state->cc.z = (x == 0);
 		state->cc.s = (0x80 == (x & 0x80));
-		state->cc.p = parity(x, 8);
+		state->cc.p = Parity(x, 8);
 		state->cc.cy = 0;
 		state->a = x;
 		state->pc++;   
@@ -1051,7 +1051,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xed: break;
-	case 0xee: printf("XRI	#$%02x", code[1]); opBytes = 2; break;
+	case 0xee: printf("XRI	#$%02x", code[1]);  break;
 	case 0xef: printf("RST	5"); break;
 	case 0xf0: 
 	{
@@ -1085,7 +1085,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xf5: printf("PUSH	PSW"); break;
-	case 0xf6: printf("ORI	#$%02x", code[1]); opBytes = 2; break;
+	case 0xf6: printf("ORI	#$%02x", code[1]);  break;
 	case 0xf7: printf("RST	6"); break;
 	case 0xf8: 
 	{
@@ -1119,7 +1119,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xfd: break;
-	case 0xfe: printf("CPI	#$%02x", code[1]); opBytes = 2; break;
+	case 0xfe: printf("CPI	#$%02x", code[1]);  break;
 	case 0xff: printf("RST	7"); break;
 	}
 	state->pc += 1;
