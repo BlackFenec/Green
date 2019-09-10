@@ -102,7 +102,17 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0x0e: printf("MVI	C,#$%02x", code[1]); opBytes = 2; break;
-	case 0x0f: printf("RRC"); break;
+	case 0x0f: 
+	{
+		uint8_t x = state->a & code[1];
+		state->cc.z = (x == 0);
+		state->cc.s = (0x80 == (x & 0x80));
+		state->cc.p = parity(x, 8);
+		state->cc.cy = 0;   
+		state->a = x;
+		state->pc++;  
+	}
+	break;
 	case 0x10: break;
 	case 0x11: printf("LXI	D,#$%02x%02x", code[2], code[1]); opBytes = 3; break;
 	case 0x12: printf("STAX	D"); break;
@@ -171,7 +181,13 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0x1e: printf("MVI	E,#$%02x", code[1]); opBytes = 2; break;
-	case 0x1f: printf("RAR"); break;
+	case 0x1f: 
+	{
+		uint8_t x = state->a;
+		state->a = (state->cc.cy << 7) | (x >> 1);
+		state->cc.cy = (1 == (x & 1));
+	}
+	break;
 	case 0x20: printf("RIM"); break;
 	case 0x21: printf("LXI	H,#$%02x%02x", code[2], code[1]); opBytes = 3; break;
 	case 0x22: printf("SHLD    $%02x%02x", code[2], code[1]); opBytes = 3; break;
@@ -239,7 +255,9 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0x2e: printf("MVI	L,#$%02x", code[1]); opBytes = 2; break;
-	case 0x2f: printf("CMA"); break;
+	case 0x2f: 
+		state->a = ~state->a;
+		break;
 	case 0x30: printf("SIM"); break;
 	case 0x31: printf("LXI SP,#$%02x%02x", code[2], code[1]); opBytes = 3; break;
 	case 0x32: printf("STA    $%02x%02x", code[2], code[1]); opBytes = 3; break;
@@ -989,7 +1007,17 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xe5: printf("PUSH	H"); break;
-	case 0xe6: printf("ANI	#$%02x", code[1]); opBytes = 2; break;
+	case 0xe6: 
+	{
+		uint8_t x = state->a & code[1];
+		state->cc.z = (x == 0);
+		state->cc.s = (0x80 == (x & 0x80));
+		state->cc.p = parity(x, 8);
+		state->cc.cy = 0;
+		state->a = x;
+		state->pc++;   
+	}
+	break;
 	case 0xe7: printf("RST	4"); break;
 	case 0xe8: 
 	{
