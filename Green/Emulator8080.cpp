@@ -282,7 +282,9 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->memory[offset] = answer & 0xff;
 	}
 	case 0x36: printf("MVI	M,#$%02x", code[1]);  break;
-	case 0x37: printf("STC"); break;
+	case 0x37: 
+		state->cc.cy = 1;
+		break;
 	case 0x38: break;
 	case 0x39: printf("DAD	SP"); break;
 	case 0x3a: printf("LDA    $%02x%02x", code[2], code[1]);  break;
@@ -306,7 +308,8 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0x3e: printf("MVI    A,#$%02x", code[1]);  break;
-	case 0x3f: printf("CMC"); break;
+	case 0x3f: state->cc.cy = ~state->cc.cy;
+		break;
 	case 0x40: state->b = state->c; break; 
 	case 0x41: state->b = state->c; break; 
 	case 0x42: state->b = state->d; break; 
@@ -789,14 +792,87 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	case 0xb5: printf("ORA	L"); break;
 	case 0xb6: printf("ORA	M"); break;
 	case 0xb7: printf("ORA	A"); break;
-	case 0xb8: printf("CMP	B"); break;
-	case 0xb9: printf("CMP	C"); break;
-	case 0xba: printf("CMP	D"); break;
-	case 0xbb: printf("CMP	E"); break;
-	case 0xbc: printf("CMP	H"); break;
-	case 0xbd: printf("CMP	L"); break;
-	case 0xbe: printf("CMP	M"); break;
-	case 0xbf: printf("CMP	A"); break;
+	case 0xb8:
+	{
+		uint8_t x = state->a - state->b;
+		state->cc.z = (x == 0);
+		state->cc.s = (0x80 == (x & 0x80));
+		state->cc.p = Parity(x, 8);
+		state->cc.cy = (state->a < state->b);
+		state->pc++;
+	}
+	break;
+	case 0xb9: 
+	{
+		uint8_t x = state->a - state->c;
+		state->cc.z = (x == 0);
+		state->cc.s = (0x80 == (x & 0x80));
+		state->cc.p = Parity(x, 8);
+		state->cc.cy = (state->a < state->c);
+		state->pc++;
+	}
+	break;
+	case 0xba: 
+	{
+		uint8_t x = state->a - state->d;
+		state->cc.z = (x == 0);
+		state->cc.s = (0x80 == (x & 0x80));
+		state->cc.p = Parity(x, 8);
+		state->cc.cy = (state->a < state->d);
+		state->pc++;
+	}
+	break;
+	case 0xbb: 
+	{
+		uint8_t x = state->a - state->e;
+		state->cc.z = (x == 0);
+		state->cc.s = (0x80 == (x & 0x80));
+		state->cc.p = Parity(x, 8);
+		state->cc.cy = (state->a < state->e);
+		state->pc++;
+	}
+	break;
+	case 0xbc: 
+	{
+		uint8_t x = state->a - state->h;
+		state->cc.z = (x == 0);
+		state->cc.s = (0x80 == (x & 0x80));
+		state->cc.p = Parity(x, 8);
+		state->cc.cy = (state->a < state->h);
+		state->pc++;
+	}
+	break;
+	case 0xbd: 
+	{
+		uint8_t x = state->a - state->l;
+		state->cc.z = (x == 0);
+		state->cc.s = (0x80 == (x & 0x80));
+		state->cc.p = Parity(x, 8);
+		state->cc.cy = (state->a < state->l);
+		state->pc++;
+	}
+	break;
+	case 0xbe: 
+	{
+		uint16_t offset = (state->h << 8) | (state->l);
+		uint8_t x = state->a - state->memory[offset];
+		state->cc.z = (x == 0);
+		state->cc.s = (0x80 == (x & 0x80));
+		state->cc.p = Parity(x, 8);
+		state->cc.cy = (state->a < state->b);
+		state->pc++;
+	}
+	break;
+	case 0xbf: 
+	{
+		uint8_t x = state->a - state->a;
+		state->cc.z = (x == 0);
+		state->cc.s = (0x80 == (x & 0x80));
+		state->cc.p = Parity(x, 8);
+		state->cc.cy = (state->a < state->a);
+		state->pc++;
+	}
+	break;
 	case 0xc0: 
 	{
 		if (0 == state->cc.z)
@@ -1119,7 +1195,16 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xfd: break;
-	case 0xfe: printf("CPI	#$%02x", code[1]);  break;
+	case 0xfe: 
+	{
+		uint8_t x = state->a - code[1];
+		state->cc.z = (x == 0);
+		state->cc.s = (0x80 == (x & 0x80));
+		state->cc.p = Parity(x, 8);
+		state->cc.cy = (state->a < code[1]);
+		state->pc++;
+	}
+	break;
 	case 0xff: printf("RST	7"); break;
 	}
 	state->pc += 1;
