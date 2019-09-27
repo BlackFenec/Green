@@ -1207,5 +1207,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	break;
 	case 0xff: printf("RST	7"); break;
 	}
+
 	state->pc += 1;
+	return 0;
 }

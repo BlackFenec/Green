@@ -3,7 +3,7 @@
 
 #include "State8080.h"
 
-class Emulator8080 :
+class Emulator8080
 {
 public:
 
