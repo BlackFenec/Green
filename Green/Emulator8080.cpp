@@ -188,7 +188,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.cy = (1 == (x & 1));
 	}
 	break;
-	case 0x20: printf("RIM"); break;
+	case 0x20: break;
 	case 0x21: printf("LXI	H,#$%02x%02x", code[2], code[1]);  break;
 	case 0x22: printf("SHLD    $%02x%02x", code[2], code[1]);  break;
 	case 0x23: 
@@ -258,7 +258,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	case 0x2f: 
 		state->a = ~state->a;
 		break;
-	case 0x30: printf("SIM"); break;
+	case 0x30: break;
 	case 0x31: printf("LXI SP,#$%02x%02x", code[2], code[1]);  break;
 	case 0x32: printf("STA    $%02x%02x", code[2], code[1]);  break;
 	case 0x33: printf("INX	SP"); break;
@@ -990,7 +990,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 			state->pc += 2;
 	}
 	break;
-	case 0xd3: printf("OUT #$%02x", code[1]);  break;
+	case 0xd3: state->pc++;  break;
 	case 0xd4: 
 	{
 		if (0 == state->cc.cy)
@@ -1033,7 +1033,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 			state->pc += 2;
 	}
 	break;
-	case 0xdb: printf("IN	#$%02x", code[1]);  break;
+	case 0xdb: state->pc++;  break;
 	case 0xdc: 
 	{
 		if (1 == state->cc.cy)
@@ -1145,7 +1145,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 			state->pc += 2;
 	}
 	break;
-	case 0xf3: printf("DI"); break;
+	case 0xf3: state->int_enable = 0; break;
 	case 0xf4: 
 	{
 		if (0 == state->cc.s)
@@ -1179,7 +1179,7 @@ int Emulator8080::Emulate8080Op(State8080* state)
 			state->pc += 2;
 	}
 	break;
-	case 0xfb: printf("EI"); break;
+	case 0xfb: state->int_enable = 1;  break;
 	case 0xfc: 
 	{
 		if (1 == state->cc.s)
