@@ -3,12 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void Emulator8080::UnimplementedInstruction(State8080* state)
-{
-	printf("Error: Unimplemented instruction\n");
-	exit(1);
-}
-
 int Emulator8080::Parity(int x, int size)
 {
 	int i;
@@ -20,6 +14,14 @@ int Emulator8080::Parity(int x, int size)
 		x = x >> 1;
 	}
 	return (0 == (p & 0x1));
+}
+
+int Emulator8080::LogicFlagsA(State8080* state)
+{
+	state->cc.cy = state->cc.ac = 0;
+	state->cc.z = (state->a == 0);
+	state->cc.s = (0x80 == (state->a & 0x80));
+	state->cc.p = Parity(state->a, 8);
 }
 
 int Emulator8080::Emulate8080Op(State8080* state)
@@ -62,7 +64,12 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->b = answer & 0xff;
 	}
 	break;
-	case 0x06: printf("MVI    B,#$%02x", code[1]); break;
+	case 0x06: 
+	{
+		state->b = code[1];
+		state->pc++;
+	}
+	break;
 	case 0x07: printf("RLC"); break;
 	case 0x08: break;
 	case 0x09: 
@@ -75,7 +82,12 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.cy = ((res & 0xffff0000) > 0);
 	}
 	break;
-	case 0x0a: printf("LDAX	B"); break;
+	case 0x0a: 
+	{
+		uint16_t offset = (state->b << 8) | state->c;
+		state->a = state->memory[offset];
+	}
+	break;
 	case 0x0b: 
 	{
 		state->c--;
@@ -101,7 +113,12 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->c = answer & 0xff;
 	}
 	break;
-	case 0x0e: printf("MVI	C,#$%02x", code[1]); break;
+	case 0x0e: 
+	{
+		state->c = code[1];
+		state->pc++;
+	}
+	break;
 	case 0x0f: 
 	{
 		uint8_t x = state->a & code[1];
@@ -114,7 +131,13 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0x10: break;
-	case 0x11: printf("LXI	D,#$%02x%02x", code[2], code[1]);  break;
+	case 0x11:
+	{
+		state->e = code[1];
+		state->d = code[2];
+		state->pc += 2;
+	}
+	break;
 	case 0x12: printf("STAX	D"); break;
 	case 0x13: 
 	{
@@ -141,7 +164,11 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->d = answer & 0xff;
 	}
 	break;
-	case 0x16: printf("MVI	D,#$%02x", code[1]);  break;
+	case 0x16:
+	{
+		state->d = code[1];
+		state->pc++;
+	}
 	case 0x17: printf("RAL"); break;
 	case 0x18: break;
 	case 0x19:
@@ -154,7 +181,12 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.cy = ((res & 0xffff0000) > 0);
 	}
 	break;
-	case 0x1a: printf("LDAX	D"); break;
+	case 0x1a: 
+	{
+		uint16_t offset = (state->d << 8) | state->e;
+		state->a = state->memory[offset];
+	}
+	break;
 	case 0x1b: 
 	{
 		state->e--;
@@ -180,7 +212,11 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->e = answer & 0xff;
 	}
 	break;
-	case 0x1e: printf("MVI	E,#$%02x", code[1]);  break;
+	case 0x1e: 
+	{
+		state->e = code[1];
+		state->pc++;
+	}
 	case 0x1f: 
 	{
 		uint8_t x = state->a;
@@ -189,7 +225,13 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0x20: break;
-	case 0x21: printf("LXI	H,#$%02x%02x", code[2], code[1]);  break;
+	case 0x21: 
+	{
+		state->l = code[1];
+		state->h = code[2];
+		state->pc += 2;
+	}
+	break;
 	case 0x22: printf("SHLD    $%02x%02x", code[2], code[1]);  break;
 	case 0x23: 
 	{
@@ -216,7 +258,11 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->h = answer & 0xff;
 	}
 	break;
-	case 0x26: printf("MVI	H,#$%02x", code[1]);  break;
+	case 0x26:
+	{
+		state->h = code[1];
+		state->pc++;
+	}
 	case 0x27: printf("DAA"); break;
 	case 0x28: break;
 	case 0x29:
@@ -254,13 +300,28 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->l = answer & 0xff;
 	}
 	break;
-	case 0x2e: printf("MVI	L,#$%02x", code[1]);  break;
+	case 0x2e:
+	{
+		state->l = code[1];
+		state->pc++;
+	}
 	case 0x2f: 
 		state->a = ~state->a;
 		break;
 	case 0x30: break;
-	case 0x31: printf("LXI SP,#$%02x%02x", code[2], code[1]);  break;
-	case 0x32: printf("STA    $%02x%02x", code[2], code[1]);  break;
+	case 0x31: 
+	{
+		state->sp = (code[2] << 8) | code[1];
+		state->pc += 2;
+	}
+	break;
+	case 0x32: 
+	{
+		uint16_t offset = (code[2] << 8) | (code[1]);
+		state->memory[offset] = state->a;
+		state->pc += 2;
+	}
+	break;
 	case 0x33: printf("INX	SP"); break;
 	case 0x34: 
 	{
@@ -281,13 +342,25 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->cc.p = Parity(answer & 0xff, 8);
 		state->memory[offset] = answer & 0xff;
 	}
-	case 0x36: printf("MVI	M,#$%02x", code[1]);  break;
+	case 0x36: 
+	{
+		uint16_t offset = (state->h << 8) | (state->l);
+		state->memory[offset] = code[1];
+		state->pc++;
+	}
+	break;
 	case 0x37: 
 		state->cc.cy = 1;
 		break;
 	case 0x38: break;
 	case 0x39: printf("DAD	SP"); break;
-	case 0x3a: printf("LDA    $%02x%02x", code[2], code[1]);  break;
+	case 0x3a: 
+	{
+		uint16_t offset = (code[2] << 8) | (code[1]);
+		state->a = state->memory[offset];
+		state->pc += 2;
+	}
+	break;
 	case 0x3b: printf("DCX	SP"); break;
 	case 0x3c: 
 	{
@@ -307,7 +380,11 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->a = answer & 0xff;
 	}
 	break;
-	case 0x3e: printf("MVI    A,#$%02x", code[1]);  break;
+	case 0x3e:
+	{
+		state->a = code[1];
+		state->pc++;
+	}
 	case 0x3f: state->cc.cy = ~state->cc.cy;
 		break;
 	case 0x40: state->b = state->c; break; 
@@ -768,22 +845,34 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->a = answer & 0xff;
 	}
 	break;
-	case 0xa0: printf("ANA	B"); break;
-	case 0xa1: printf("ANA	C"); break;
-	case 0xa2: printf("ANA	D"); break;
-	case 0xa3: printf("ANA	E"); break;
-	case 0xa4: printf("ANA	H"); break;
-	case 0xa5: printf("ANA	L"); break;
-	case 0xa6: printf("ANA	M"); break;
-	case 0xa7: printf("ANA	A"); break;
-	case 0xa8: printf("XRA	B"); break;
-	case 0xa9: printf("XRA	C"); break;
-	case 0xaa: printf("XRA	D"); break;
-	case 0xab: printf("XRA	E"); break;
-	case 0xac: printf("XRA	H"); break;
-	case 0xad: printf("XRA	L"); break;
-	case 0xae: printf("XRA	M"); break;
-	case 0xaf: printf("XRA	A"); break;
+	case 0xa0: state->a = state->a & state->b; LogicFlagsA(state);	break;
+	case 0xa1: state->a = state->a & state->c; LogicFlagsA(state);	break;
+	case 0xa2: state->a = state->a & state->d; LogicFlagsA(state);	break;
+	case 0xa3: state->a = state->a & state->e; LogicFlagsA(state);	break;
+	case 0xa4: state->a = state->a & state->h; LogicFlagsA(state);	break;
+	case 0xa5: state->a = state->a & state->l; LogicFlagsA(state);	break;
+	case 0xa6: 
+	{
+		uint16_t offset = (state->h << 8) | (state->l);
+		state->a = state->a & state->memory[offset];
+		LogicFlagsA(state);
+	}
+	break;
+	case 0xa7: state->a = state->a & state->a; LogicFlagsA(state);	break;
+	case 0xa8: state->a = state->a ^ state->b; LogicFlagsA(state);	break;
+	case 0xa9: state->a = state->a ^ state->c; LogicFlagsA(state);	break;
+	case 0xaa: state->a = state->a ^ state->d; LogicFlagsA(state);	break;
+	case 0xab: state->a = state->a ^ state->e; LogicFlagsA(state);	break;
+	case 0xac: state->a = state->a ^ state->h; LogicFlagsA(state);	break;
+	case 0xad: state->a = state->a ^ state->l; LogicFlagsA(state);	break;
+	case 0xae: 
+	{
+		uint16_t offset = (state->h << 8) | (state->l);
+		state->a = state->a ^ state->memory[offset]; 
+		LogicFlagsA(state);
+	}
+	break;
+	case 0xaf: state->a = state->a ^ state->a; LogicFlagsA(state);	break;
 	case 0xb0: printf("ORA	B"); break;
 	case 0xb1: printf("ORA	C"); break;
 	case 0xb2: printf("ORA	D"); break;
@@ -1147,7 +1236,16 @@ int Emulator8080::Emulate8080Op(State8080* state)
 			state->pc += 2;
 	}
 	break;
-	case 0xeb: printf("XCHG"); break;
+	case 0xeb: 
+	{
+		uint8_t save1 = state->d;
+		uint8_t save2 = state->e;
+		state->d = state->h;
+		state->e = state->l;
+		state->h = save1;
+		state->l = save2;
+	}
+	break;
 	case 0xec: 
 	{
 		if (1 == state->cc.p)

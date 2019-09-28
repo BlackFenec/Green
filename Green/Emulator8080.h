@@ -7,9 +7,9 @@ class Emulator8080
 {
 public:
 
-	void UnimplementedInstruction(State8080* state);
-
 	int Emulate8080Op(State8080* state);
+
+	int LogicFlagsA(State8080* state);
 
 	int Parity(int x, int size);
 };
