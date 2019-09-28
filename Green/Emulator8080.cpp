@@ -873,14 +873,20 @@ int Emulator8080::Emulate8080Op(State8080* state)
 	}
 	break;
 	case 0xaf: state->a = state->a ^ state->a; LogicFlagsA(state);	break;
-	case 0xb0: printf("ORA	B"); break;
-	case 0xb1: printf("ORA	C"); break;
-	case 0xb2: printf("ORA	D"); break;
-	case 0xb3: printf("ORA	E"); break;
-	case 0xb4: printf("ORA	H"); break;
-	case 0xb5: printf("ORA	L"); break;
-	case 0xb6: printf("ORA	M"); break;
-	case 0xb7: printf("ORA	A"); break;
+	case 0xb0: state->a = state->a | state->b; LogicFlagsA(state);	break;
+	case 0xb1: state->a = state->a | state->c; LogicFlagsA(state);	break;
+	case 0xb2: state->a = state->a | state->d; LogicFlagsA(state);	break;
+	case 0xb3: state->a = state->a | state->e; LogicFlagsA(state);	break;
+	case 0xb4: state->a = state->a | state->h; LogicFlagsA(state);	break;
+	case 0xb5: state->a = state->a | state->l; LogicFlagsA(state);	break;
+	case 0xb6: 
+	{
+		uint16_t offset = (state->h << 8) | (state->l);
+		state->a = state->a | state->memory[offset]; 
+		LogicFlagsA(state);	
+	}
+	break;
+	case 0xb7: state->a = state->a | state->a; LogicFlagsA(state);	break;
 	case 0xb8:
 	{
 		uint8_t x = state->a - state->b;
