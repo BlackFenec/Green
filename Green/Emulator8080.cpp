@@ -16,7 +16,7 @@ int Emulator8080::Parity(int x, int size)
 	return (0 == (p & 0x1));
 }
 
-int Emulator8080::LogicFlagsA(State8080* state)
+void Emulator8080::LogicFlagsA(State8080* state)
 {
 	state->cc.cy = state->cc.ac = 0;
 	state->cc.z = (state->a == 0);

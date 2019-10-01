@@ -19,6 +19,8 @@ public :
 	uint8_t* memory;
 	ConditionCodes cc;
 	uint8_t int_enable;
+
+	State8080();
 };
 
 #endif // !STATE8080_H_

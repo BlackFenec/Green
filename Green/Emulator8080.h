@@ -9,7 +9,7 @@ public:
 
 	int Emulate8080Op(State8080* state);
 
-	int LogicFlagsA(State8080* state);
+	void LogicFlagsA(State8080* state);
 
 	int Parity(int x, int size);
 };

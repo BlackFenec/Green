@@ -126,6 +126,7 @@
     <ClCompile Include="Disassembler.cpp" />
     <ClCompile Include="Emulator8080.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="State8080.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Emulator8080.h" />

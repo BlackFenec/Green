@@ -1,4 +1,4 @@
-#include "Disassembler.h"
+#include "Emulator8080.h"
 #include <fstream>
 #include <iostream>
 
@@ -18,18 +18,19 @@ int main(int argc, char** argv)
 	int length = static_cast<int>(file.tellg());
 	file.seekg(0, file.beg);
 
-	unsigned char* buffer = new unsigned char[length];
+	State8080* state = new State8080();
+	uint8_t* buffer = &state->memory[0];
 
-	file.read((char*)buffer, length);
+	file.read(reinterpret_cast<char*>(buffer), sizeof(char));
 	file.close();
 
-	int pc = 0;
+	int done = 0;
 
-	Disassembler disassembler;
+	Emulator8080 emulator;
 
-	while (pc < length)
+	while (done == 0)
 	{
-		pc += disassembler.Disassemble8080Op(buffer, pc);
+		done = emulator.Emulate8080Op(state);
 	}
 
 	return 0;
