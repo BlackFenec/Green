@@ -18,19 +18,22 @@ int main(int argc, char** argv)
 	int length = static_cast<int>(file.tellg());
 	file.seekg(0, file.beg);
 
-	State8080* state = new State8080();
-	uint8_t* buffer = &state->memory[0];
+	State8080* state = new State8080(length);
+	//uint8_t* buffer = &state->memory[0];
+	//unsigned char* buffer2 = new unsigned char[length];
 
-	file.read(reinterpret_cast<char*>(buffer), sizeof(char));
+	unsigned char* buffer = new unsigned char[length];
+
+	file.read((char*)state->memory, length);
+
+	//file.read(reinterpret_cast<char*>(buffer2), sizeof(char));
 	file.close();
-
-	int done = 0;
 
 	Emulator8080 emulator;
 
-	while (done == 0)
+	while (state->pc < length)
 	{
-		done = emulator.Emulate8080Op(state);
+		emulator.Emulate8080Op(state);
 	}
 
 	return 0;
