@@ -20,7 +20,7 @@ public :
 	ConditionCodes cc;
 	uint8_t int_enable;
 
-	State8080(int length);
+	State8080();
 };
 
 #endif // !STATE8080_H_

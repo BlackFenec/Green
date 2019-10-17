@@ -18,15 +18,10 @@ int main(int argc, char** argv)
 	int length = static_cast<int>(file.tellg());
 	file.seekg(0, file.beg);
 
-	State8080* state = new State8080(length);
-	//uint8_t* buffer = &state->memory[0];
-	//unsigned char* buffer2 = new unsigned char[length];
-
+	State8080* state = new State8080();
 	unsigned char* buffer = new unsigned char[length];
 
 	file.read((char*)state->memory, length);
-
-	//file.read(reinterpret_cast<char*>(buffer2), sizeof(char));
 	file.close();
 
 	Emulator8080 emulator;

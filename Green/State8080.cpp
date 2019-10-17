@@ -1,6 +1,6 @@
 #include "State8080.h"
 
-State8080::State8080(int length)
+State8080::State8080()
 {
 	this->a = 0;
 	this->b = 0;
@@ -11,7 +11,7 @@ State8080::State8080(int length)
 	this->l = 0;
 	this->sp = 0;
 	this->pc = 0;
-	this->memory = new uint8_t[length]{};
+	this->memory = new uint8_t[65536]{};
 	this->cc = ConditionCodes();
 	this->int_enable = 0;
 }
