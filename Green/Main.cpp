@@ -19,7 +19,6 @@ int main(int argc, char** argv)
 	file.seekg(0, file.beg);
 
 	State8080* state = new State8080();
-	unsigned char* buffer = new unsigned char[length];
 
 	file.read((char*)state->memory, length);
 	file.close();
