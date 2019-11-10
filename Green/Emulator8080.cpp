@@ -3,6 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void Emulator8080::GenerateInterrupt(State8080* state, int interrupt_num)
+{
+	Push(state, (state->pc & 0xFF00) >> 8, (state->pc & 01xff));
+	state->pc = 8 * interrupt_num;
+}
+
 int Emulator8080::Parity(int x, int size)
 {
 	int i;
