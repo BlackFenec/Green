@@ -3,10 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void Emulator8080::GenerateInterrupt(State8080* state, int interrupt_num)
+void Emulator8080::GenerateInterrupt(int interrupt_num)
 {
-	Push(state, (state->pc & 0xFF00) >> 8, (state->pc & 01xff));
-	state->pc = 8 * interrupt_num;
+	//Push(state, (state->pc & 0xFF00) >> 8, (state->pc & 01xff));
+	//state->pc = 8 * interrupt_num;
+	//state->int_enable = 0;
 }
 
 int Emulator8080::Parity(int x, int size)
@@ -22,7 +23,7 @@ int Emulator8080::Parity(int x, int size)
 	return (0 == (p & 0x1));
 }
 
-void Emulator8080::LogicFlagsA(State8080* state)
+void Emulator8080::LogicFlagsA()
 {
 	state->cc.cy = state->cc.ac = 0;
 	state->cc.z = (state->a == 0);
@@ -30,7 +31,7 @@ void Emulator8080::LogicFlagsA(State8080* state)
 	state->cc.p = Parity(state->a, 8);
 }
 
-int Emulator8080::Emulate8080Op(State8080* state)
+int Emulator8080::Emulate8080Op()
 {
 	unsigned char* code = &state->memory[state->pc];
 
@@ -851,48 +852,48 @@ int Emulator8080::Emulate8080Op(State8080* state)
 		state->a = answer & 0xff;
 	}
 	break;
-	case 0xa0: state->a = state->a & state->b; LogicFlagsA(state);	break;
-	case 0xa1: state->a = state->a & state->c; LogicFlagsA(state);	break;
-	case 0xa2: state->a = state->a & state->d; LogicFlagsA(state);	break;
-	case 0xa3: state->a = state->a & state->e; LogicFlagsA(state);	break;
-	case 0xa4: state->a = state->a & state->h; LogicFlagsA(state);	break;
-	case 0xa5: state->a = state->a & state->l; LogicFlagsA(state);	break;
+	case 0xa0: state->a = state->a & state->b; LogicFlagsA();	break;
+	case 0xa1: state->a = state->a & state->c; LogicFlagsA();	break;
+	case 0xa2: state->a = state->a & state->d; LogicFlagsA();	break;
+	case 0xa3: state->a = state->a & state->e; LogicFlagsA();	break;
+	case 0xa4: state->a = state->a & state->h; LogicFlagsA();	break;
+	case 0xa5: state->a = state->a & state->l; LogicFlagsA();	break;
 	case 0xa6: 
 	{
 		uint16_t offset = (state->h << 8) | (state->l);
 		state->a = state->a & state->memory[offset];
-		LogicFlagsA(state);
+		LogicFlagsA();
 	}
 	break;
-	case 0xa7: state->a = state->a & state->a; LogicFlagsA(state);	break;
-	case 0xa8: state->a = state->a ^ state->b; LogicFlagsA(state);	break;
-	case 0xa9: state->a = state->a ^ state->c; LogicFlagsA(state);	break;
-	case 0xaa: state->a = state->a ^ state->d; LogicFlagsA(state);	break;
-	case 0xab: state->a = state->a ^ state->e; LogicFlagsA(state);	break;
-	case 0xac: state->a = state->a ^ state->h; LogicFlagsA(state);	break;
-	case 0xad: state->a = state->a ^ state->l; LogicFlagsA(state);	break;
+	case 0xa7: state->a = state->a & state->a; LogicFlagsA();	break;
+	case 0xa8: state->a = state->a ^ state->b; LogicFlagsA();	break;
+	case 0xa9: state->a = state->a ^ state->c; LogicFlagsA();	break;
+	case 0xaa: state->a = state->a ^ state->d; LogicFlagsA();	break;
+	case 0xab: state->a = state->a ^ state->e; LogicFlagsA();	break;
+	case 0xac: state->a = state->a ^ state->h; LogicFlagsA();	break;
+	case 0xad: state->a = state->a ^ state->l; LogicFlagsA();	break;
 	case 0xae: 
 	{
 		uint16_t offset = (state->h << 8) | (state->l);
 		state->a = state->a ^ state->memory[offset]; 
-		LogicFlagsA(state);
+		LogicFlagsA();
 	}
 	break;
-	case 0xaf: state->a = state->a ^ state->a; LogicFlagsA(state);	break;
-	case 0xb0: state->a = state->a | state->b; LogicFlagsA(state);	break;
-	case 0xb1: state->a = state->a | state->c; LogicFlagsA(state);	break;
-	case 0xb2: state->a = state->a | state->d; LogicFlagsA(state);	break;
-	case 0xb3: state->a = state->a | state->e; LogicFlagsA(state);	break;
-	case 0xb4: state->a = state->a | state->h; LogicFlagsA(state);	break;
-	case 0xb5: state->a = state->a | state->l; LogicFlagsA(state);	break;
+	case 0xaf: state->a = state->a ^ state->a; LogicFlagsA();	break;
+	case 0xb0: state->a = state->a | state->b; LogicFlagsA();	break;
+	case 0xb1: state->a = state->a | state->c; LogicFlagsA();	break;
+	case 0xb2: state->a = state->a | state->d; LogicFlagsA();	break;
+	case 0xb3: state->a = state->a | state->e; LogicFlagsA();	break;
+	case 0xb4: state->a = state->a | state->h; LogicFlagsA();	break;
+	case 0xb5: state->a = state->a | state->l; LogicFlagsA();	break;
 	case 0xb6: 
 	{
 		uint16_t offset = (state->h << 8) | (state->l);
 		state->a = state->a | state->memory[offset]; 
-		LogicFlagsA(state);	
+		LogicFlagsA();	
 	}
 	break;
-	case 0xb7: state->a = state->a | state->a; LogicFlagsA(state);	break;
+	case 0xb7: state->a = state->a | state->a; LogicFlagsA();	break;
 	case 0xb8:
 	{
 		uint8_t x = state->a - state->b;

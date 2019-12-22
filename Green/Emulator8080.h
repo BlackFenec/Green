@@ -5,15 +5,23 @@
 
 class Emulator8080
 {
+private :
+	State8080* state;
+
+	void LogicFlagsA();
+	int Parity(int x, int size);
+
 public:
 
-	int Emulate8080Op(State8080* state);
+	Emulator8080()
+	{
+		state = new State8080();
+	}
 
-	void GenerateInterrupt(State8080* state, int interrupt_num);
+	State8080* State() { return state; }
+	int Emulate8080Op();
+	void GenerateInterrupt(int interrupt_num);
 
-	void LogicFlagsA(State8080* state);
-
-	int Parity(int x, int size);
 };
 
 #endif // !EMULATOR8080_H_
