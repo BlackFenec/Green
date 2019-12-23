@@ -33,3 +33,7 @@
 /Green/x64/Debug
 /Green/.vs/Green/v16
 /roms/invaders.rom
+
+#Packages
+**/packages/*
+!**/Green/packages/repositories.config
