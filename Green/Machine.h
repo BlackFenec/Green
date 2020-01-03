@@ -1,9 +1,9 @@
 #ifndef MACHINE_H_
 #define MACHINE_H_
 
+#include <boost/asio.hpp>
 #include <chrono>
 #include <string>
-#include <boost/asio.hpp>
 #include "Emulator8080.h"
 
 class Machine

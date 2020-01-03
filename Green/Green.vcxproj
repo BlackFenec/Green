@@ -156,6 +156,7 @@
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="Machine.h" />
     <ClInclude Include="State8080.h" />
+    <ClInclude Include="stb_image.h" />
     <ClInclude Include="View.h" />
   </ItemGroup>
   <ItemGroup>

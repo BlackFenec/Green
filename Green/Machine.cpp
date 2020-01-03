@@ -1,8 +1,8 @@
 #include "Machine.h"
 #include <fstream>
 #include <iostream>
-#include <Windows.h>
 #include <boost/bind.hpp>
+#include <Windows.h>
 
 uint8_t Machine::In(uint8_t port)
 {
@@ -129,5 +129,5 @@ void Machine::StartEmulation()
 
 void* Machine::FrameBuffer()
 {
-	return (void*)&emulator->State()->memory[0x2400];
+	return (void*) &(emulator->State()->memory[0x2400]);
 }

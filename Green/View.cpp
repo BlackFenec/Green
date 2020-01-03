@@ -1,9 +1,109 @@
 #include "View.h"
+#include <boost/bind.hpp>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+#define RGB_ON  0xFFFFFFFFL
+#define RGB_OFF 0x00000000L
 
 ID3D11Device* View::g_pd3dDevice = NULL;
 ID3D11DeviceContext* View::g_pd3dDeviceContext = NULL;
 IDXGISwapChain* View::g_pSwapChain = NULL;
 ID3D11RenderTargetView* View::g_mainRenderTargetView = NULL;
+unsigned char* View::buffer8888 = (unsigned char*)malloc(4 * 224 * 256);
+Machine* View::machine = new Machine();
+
+bool View::LoadTextureFromData(unsigned char* data, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height)
+{
+    // Load from disk into a raw RGBA buffer
+    int image_width = 224;
+    int image_height = 256;
+    unsigned char* image_data = data;// stbi_load(filename, &image_width, &image_height, NULL, 4);
+    if (image_data == NULL)
+        return false;
+
+    // Create texture
+    D3D11_TEXTURE2D_DESC desc;
+    ZeroMemory(&desc, sizeof(desc));
+    desc.Width = image_width;
+    desc.Height = image_height;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = 0;
+
+    ID3D11Texture2D* pTexture = NULL;
+    D3D11_SUBRESOURCE_DATA subResource;
+    subResource.pSysMem = image_data;
+    subResource.SysMemPitch = desc.Width * 4;
+    subResource.SysMemSlicePitch = 0;
+    g_pd3dDevice->CreateTexture2D(&desc, &subResource, &pTexture);
+
+    // Create texture view
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+    ZeroMemory(&srvDesc, sizeof(srvDesc));
+    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = desc.MipLevels;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    g_pd3dDevice->CreateShaderResourceView(pTexture, &srvDesc, out_srv);
+    pTexture->Release();
+
+    *out_width = image_width;
+    *out_height = image_height;
+
+    return true;
+}
+
+// Simple helper function to load an image into a DX11 texture with common settings
+bool View::LoadTextureFromFile(const char* filename, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height)
+{
+    // Load from disk into a raw RGBA buffer
+    int image_width = 0;
+    int image_height = 0;
+    unsigned char* image_data = stbi_load(filename, &image_width, &image_height, NULL, 4);
+    if (image_data == NULL)
+        return false;
+
+    // Create texture
+    D3D11_TEXTURE2D_DESC desc;
+    ZeroMemory(&desc, sizeof(desc));
+    desc.Width = image_width;
+    desc.Height = image_height;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = 0;
+
+    ID3D11Texture2D* pTexture = NULL;
+    D3D11_SUBRESOURCE_DATA subResource;
+    subResource.pSysMem = image_data;
+    subResource.SysMemPitch = desc.Width * 4;
+    subResource.SysMemSlicePitch = 0;
+    g_pd3dDevice->CreateTexture2D(&desc, &subResource, &pTexture);
+
+    // Create texture view
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+    ZeroMemory(&srvDesc, sizeof(srvDesc));
+    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = desc.MipLevels;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    g_pd3dDevice->CreateShaderResourceView(pTexture, &srvDesc, out_srv);
+    pTexture->Release();
+
+    *out_width = image_width;
+    *out_height = image_height;
+    stbi_image_free(image_data);
+
+    return true;
+}
 
 bool View::CreateDeviceD3D(HWND hWnd)
 {
@@ -81,8 +181,11 @@ LRESULT WINAPI View::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return ::DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
+
 int View::Start(int argc, char** argv)
 {
+    machine->Init(argc, argv);
+    /*Start Imgui*/
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("ImGui Example"), NULL };
     ::RegisterClassEx(&wc);
     HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("Green emulator"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
@@ -109,6 +212,14 @@ int View::Start(int argc, char** argv)
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    /*Start imgui end */
+
+
+    int my_image_width = 0;
+    int my_image_height = 0;
+    ID3D11ShaderResourceView* my_texture = NULL;
+    bool ret = LoadTextureFromFile("C:\\Users\\Cindy\\Desktop\\MyImage01.jpg", &my_texture, &my_image_width, &my_image_height);
+    IM_ASSERT(ret);
 
     MSG msg;
     ZeroMemory(&msg, sizeof(msg));
@@ -142,8 +253,79 @@ int View::Start(int argc, char** argv)
             float x = p.x + 4.0f, y = p.y + 4.0f;
             float spacing = 10.0f;
             draw_list->AddRectFilled(ImVec2(x, y), ImVec2(x + sz + 10, y + sz), col);
+
             ImGui::Dummy(ImVec2((sz + spacing) * 9.8f, (sz + spacing) * 3));
             ImGui::End();
+        }
+
+        {
+            ImGui::Begin("DirectX11 Texture Test");
+            ImGui::Text("pointer = %p", my_texture);
+            ImGui::Text("size = %d x %d", my_image_width, my_image_height);
+            ImGui::Image((void*)my_texture, ImVec2(my_image_width, my_image_height));
+            ImGui::End();
+
+
+
+            /**************************************************************/
+            //Translate the 1-bit space invaders frame buffer into
+            // my 32bpp RGB bitmap.  We have to rotate and
+            // flip the image as we go.
+            //
+            unsigned char* b = (unsigned char*)buffer8888;
+            unsigned char* fb = (unsigned char*)machine->FrameBuffer();
+            for (int i = 0; i < 224; ++i)
+            {
+                for (int j = 0; j < 256; j += 8)
+                {
+                    int p;
+                    //Read the first 1-bit pixel
+                    // divide by 8 because there are 8 pixels
+                    // in a byte
+                    unsigned char pix = fb[(i * (256 / 8)) + j / 8];
+
+                    ////That makes 8 output vertical pixels
+                    //// we need to do a vertical flip
+                    //// so j needs to start at the last line
+                    //// and advance backward through the buffer
+                    int offset = (255 - j) * (224 * 4) + (i * 4);
+                    unsigned int* p1 = (unsigned int*)(&b[offset]);
+                    for (p = 0; p < 8; ++p)
+                    {
+                        if (0 != (pix & (1 << p)))
+                            *p1 = RGB_ON;
+                        else
+                            *p1 = RGB_OFF;
+                        p1 -= 224;  //next line
+                    }
+                }
+            }
+
+            /*************************Temp**********************************************************/
+            for (int h = 0; h < 4 * 224 * 256; h++)
+            {
+                if (b[h] == '\0')
+                    bool tatata = true;
+            }
+            /**************************************************************************************/
+            int my_image_width1 = 0;
+            int my_image_height1 = 0;
+            ID3D11ShaderResourceView* my_texture1 = NULL;
+            bool ret1 = LoadTextureFromData(b, &my_texture1, &my_image_width1, &my_image_height1);
+            IM_ASSERT(ret1);
+
+            //224, 256 height and size 
+            ImGui::Begin("My texture");
+            ImGui::Text("pointer = %p", my_texture1);
+            ImGui::Text("size = %d x %d", my_image_width1, my_image_height1);
+            ImGui::Image((void*)my_texture1, ImVec2(my_image_width1, my_image_height1));
+            ImGui::End();
+
+            /*CGContextRef myContext = [[NSGraphicsContext currentContext]graphicsPort];
+            CGImageRef ir = CGBitmapContextCreateImage(bitmapCtx);
+            CGContextDrawImage(myContext, self.bounds, ir);
+            CGImageRelease(ir);*/
+            /**************************************************************/
         }
 
         ImGui::Render();

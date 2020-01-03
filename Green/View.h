@@ -1,6 +1,8 @@
 #ifndef VIEW_H_
 #define VIEW_H_
 
+#include <boost/asio.hpp>
+#include "Machine.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx11.h"
@@ -22,6 +24,12 @@ private :
 	static void CreateRenderTarget();
 	static void CleanupRenderTarget();
 	static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+	static Machine* machine;
+	static unsigned char* buffer8888;
+	static bool LoadTextureFromFile(const char* filename, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height);
+	static bool LoadTextureFromData(unsigned char* data, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height);
+
 
 public:
 	int Start(int argc, char** argv);
