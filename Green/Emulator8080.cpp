@@ -20,6 +20,9 @@ void Emulator8080::ArithmeticFlagsA(uint16_t result)
 
 void Emulator8080::FlagsZSP(uint8_t value)
 {
+	state->cc.z = ((value & 0xff) == 0);
+	state->cc.s = ((value & 0x80) != 0);
+	state->cc.p = Parity(value & 0xff, 8);
 }
 
 void Emulator8080::Push(uint8_t high, uint8_t low)
@@ -101,20 +104,16 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x04:
 	{
-		uint16_t answer = (uint16_t)state->b++;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->b = answer & 0xff;
+		uint16_t result = (uint16_t)state->b++;
+		FlagsZSP(result);
+		state->b = result & 0xff;
 	}
 	break;
 	case 0x05:
 	{
-		uint16_t answer = (uint16_t)state->b--;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->b = answer & 0xff;
+		uint16_t result = (uint16_t)state->b--;
+		FlagsZSP(result);
+		state->b = result & 0xff;
 	}
 	break;
 	case 0x06: 
@@ -150,20 +149,16 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x0c:
 	{
-		uint16_t answer = (uint16_t)state->c++;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->c = answer & 0xff;
+		uint16_t result = (uint16_t)state->c++;
+		FlagsZSP(result);
+		state->c = result & 0xff;
 	}
 	break;
 	case 0x0d:
 	{
-		uint16_t answer = (uint16_t)state->c--;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->c = answer & 0xff;
+		uint16_t result = (uint16_t)state->c--;
+		FlagsZSP(result);
+		state->c = result & 0xff;
 	}
 	break;
 	case 0x0e: 
@@ -206,20 +201,16 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x14:
 	{
-		uint16_t answer = (uint16_t)state->d++;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->d = answer & 0xff;
+		uint16_t result = (uint16_t)state->d++;
+		FlagsZSP(result);
+		state->d = result & 0xff;
 	}
 	break;
 	case 0x15:
 	{
-		uint16_t answer = (uint16_t)state->d--;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->d = answer & 0xff;
+		uint16_t result = (uint16_t)state->d--;
+		FlagsZSP(result);
+		state->d = result & 0xff;
 	}
 	break;
 	case 0x16:
@@ -254,20 +245,16 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x1c:
 	{
-		uint16_t answer = (uint16_t)state->e++;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->e = answer & 0xff;
+		uint16_t result = (uint16_t)state->e++;
+		FlagsZSP(result);
+		state->e = result & 0xff;
 	}
 	break;
 	case 0x1d: 
 	{
-		uint16_t answer = (uint16_t)state->e--;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->e = answer & 0xff;
+		uint16_t result = (uint16_t)state->e--;
+		FlagsZSP(result);
+		state->e = result & 0xff;
 	}
 	break;
 	case 0x1e: 
@@ -300,20 +287,16 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x24: 
 	{
-		uint16_t answer = (uint16_t)state->h++;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->h = answer & 0xff;
+		uint16_t result = (uint16_t)state->h++;
+		FlagsZSP(result);
+		state->h = result & 0xff;
 	}
 	break;
 	case 0x25: 
 	{
-		uint16_t answer = (uint16_t)state->h--;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->h = answer & 0xff;
+		uint16_t result = (uint16_t)state->h--;
+		FlagsZSP(result);
+		state->h = result & 0xff;
 	}
 	break;
 	case 0x26:
@@ -342,20 +325,16 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x2c: 
 	{
-		uint16_t answer = (uint16_t)state->l++;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->l = answer & 0xff;
+		uint16_t result = (uint16_t)state->l++;
+		FlagsZSP(result);
+		state->l = result & 0xff;
 	}
 	break;
 	case 0x2d: 
 	{
-		uint16_t answer = (uint16_t)state->l--;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->l = answer & 0xff;
+		uint16_t result = (uint16_t)state->l--;
+		FlagsZSP(result);
+		state->l = result & 0xff;
 	}
 	break;
 	case 0x2e:
@@ -384,18 +363,14 @@ int Emulator8080::Emulate8080Op()
 	case 0x34: 
 	{
 		uint16_t result = ReadFromHL() + 1;
-		state->cc.z = ((result & 0xff) == 0);
-		state->cc.s = ((result & 0x80) != 0);
-		state->cc.p = Parity(result & 0xff, 8);
+		FlagsZSP(result);
 		WriteToHL(result);
 	}
 	break;
 	case 0x35:
 	{
-		uint16_t result = ReadFromHL() - 1;
-		state->cc.z = ((result & 0xff) == 0);
-		state->cc.s = ((result & 0x80) != 0);
-		state->cc.p = Parity(result & 0xff, 8);
+		uint16_t result = ReadFromHL() - 1; 
+		FlagsZSP(result);
 		WriteToHL(result);
 	}
 	case 0x36: 
@@ -419,20 +394,16 @@ int Emulator8080::Emulate8080Op()
 	case 0x3b: printf("DCX	SP"); break;
 	case 0x3c: 
 	{
-		uint16_t answer = (uint16_t)state->a++;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a++;
+		FlagsZSP(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x3d:
 	{
-		uint16_t answer = (uint16_t)state->a--;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a--;
+		FlagsZSP(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x3e:
