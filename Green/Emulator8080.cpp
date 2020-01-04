@@ -10,9 +10,12 @@ void Emulator8080::GenerateInterrupt(int interrupt_num)
 	//state->int_enable = 0;
 }
 
-void Emulator8080::ArithmeticFlagsA(uint16_t res)
+void Emulator8080::ArithmeticFlagsA(uint16_t result)
 {
-
+	state->cc.z = ((result & 0xff) == 0);
+	state->cc.s = ((result & 0x80) != 0);
+	state->cc.cy = (result > 0xff);
+	state->cc.p = Parity(result & 0xff, 8);
 }
 
 void Emulator8080::FlagsZSP(uint8_t value)
@@ -505,322 +508,226 @@ int Emulator8080::Emulate8080Op()
 	case 0x7f: state->a = state->a; break;
 	case 0x80: 
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)state->b;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)state->b;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x81: 
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)state->c;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)state->c;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x82: 
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)state->d;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)state->d;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x83:
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)state->e;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)state->e;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x84: 
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)state->h;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)state->h;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x85: 
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)state->l;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)state->l;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x86:
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)ReadFromHL();
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)ReadFromHL();
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x87: 
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)state->a;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)state->a;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x88:
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)state->b + (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)state->b + (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x89:
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)state->c + (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)state->c + (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x8a:
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)state->d + (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)state->d + (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result &0xff;
 	}
 	break;
 	case 0x8b:
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)state->e + (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)state->e + (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x8c:
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)state->h + (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)state->h + (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x8d:
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)state->l + (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)state->l + (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x8e:
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)ReadFromHL() + (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)ReadFromHL() + (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x8f:
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)state->a + (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)state->a + (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x90: 
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)state->b;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)state->b;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x91: 
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)state->c;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)state->c;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x92:
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)state->d;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)state->d;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x93:
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)state->e;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)state->e;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x94:
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)state->h;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)state->h;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x95:
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)state->l;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)state->l;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x96:
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)ReadFromHL();
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)ReadFromHL();
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x97: 
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)state->a;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)state->a;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x98:
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)state->b - (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)state->b - (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x99:
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)state->c - (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)state->c - (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x9a:
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)state->d - (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)state->d - (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x9b:
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)state->e - (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)state->e - (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x9c:
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)state->h - (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)state->h - (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x9d:
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)state->l - (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)state->l - (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x9e:
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)ReadFromHL() - (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)ReadFromHL() - (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0x9f:
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)state->a - (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)state->a - (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0xa0: state->a = state->a & state->b; LogicFlagsA();	break;
@@ -990,12 +897,9 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0xc6:
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)code[1];
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)code[1];
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0xc7: printf("RST	0"); break;
@@ -1046,12 +950,9 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0xce: 
 	{
-		uint16_t answer = (uint16_t)state->a + (uint16_t)code[1] + (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a + (uint16_t)code[1] + (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0xcf: printf("RST	1"); break;
@@ -1101,12 +1002,9 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0xd6:
 	{
-		uint16_t answer = (uint16_t)state->a - (uint16_t)code[1] - (uint16_t)state->cc.cy;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.cy = (answer > 0xff);
-		state->cc.p = Parity(answer & 0xff, 8);
-		state->a = answer & 0xff;
+		uint16_t result = (uint16_t)state->a - (uint16_t)code[1] - (uint16_t)state->cc.cy;
+		ArithmeticFlagsA(result);
+		state->a = result & 0xff;
 	}
 	break;
 	case 0xd7: printf("RST	2"); break;

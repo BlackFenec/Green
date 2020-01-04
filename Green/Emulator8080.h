@@ -8,7 +8,7 @@ class Emulator8080
 private :
 	State8080* state;
 
-	void ArithmeticFlagsA(uint16_t res);
+	void ArithmeticFlagsA(uint16_t result);
 	void FlagsZSP(uint8_t value);
 	void LogicFlagsA();
 	int Parity(int x, int size);
