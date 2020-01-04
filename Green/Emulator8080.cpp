@@ -31,12 +31,14 @@ void Emulator8080::Pop(uint8_t* high, uint8_t* low)
 
 uint8_t Emulator8080::ReadFromHL()
 {
-
+	uint16_t offset = (state->h << 8) | state->l;
+	return state->memory[offset];
 }
 
 void Emulator8080::WriteToHL(uint8_t value)
 {
-
+	uint16_t offset = (state->h << 8) | state->l;
+	WriteMemory(offset, value);
 }
 
 void Emulator8080::WriteMemory(uint16_t address, uint8_t value)
@@ -378,27 +380,24 @@ int Emulator8080::Emulate8080Op()
 	case 0x33: printf("INX	SP"); break;
 	case 0x34: 
 	{
-		uint16_t offset = (state->h << 8) | (state->l);
-		uint16_t answer = state->memory[offset]++;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		WriteMemory(offset, answer & 0xff);
+		uint16_t result = ReadFromHL() + 1;
+		state->cc.z = ((result & 0xff) == 0);
+		state->cc.s = ((result & 0x80) != 0);
+		state->cc.p = Parity(result & 0xff, 8);
+		WriteToHL(result);
 	}
 	break;
 	case 0x35:
 	{
-		uint16_t offset = (state->h << 8) | (state->l);
-		uint16_t answer = state->memory[offset]--;
-		state->cc.z = ((answer & 0xff) == 0);
-		state->cc.s = ((answer & 0x80) != 0);
-		state->cc.p = Parity(answer & 0xff, 8);
-		WriteMemory(offset, answer & 0xff);
+		uint16_t result = ReadFromHL() - 1;
+		state->cc.z = ((result & 0xff) == 0);
+		state->cc.s = ((result & 0x80) != 0);
+		state->cc.p = Parity(result & 0xff, 8);
+		WriteToHL(result);
 	}
 	case 0x36: 
 	{
-		uint16_t offset = (state->h << 8) | (state->l);
-		WriteMemory(offset, code[1]);
+		WriteToHL(code[1]);
 		state->pc++;
 	}
 	break;
@@ -446,12 +445,7 @@ int Emulator8080::Emulate8080Op()
 	case 0x43: state->b = state->e; break; 
 	case 0x44: state->b = state->h; break; 
 	case 0x45: state->b = state->l; break; 
-	case 0x46: 
-			{
-				uint16_t offset = (state->h << 8) | (state->l);
-				state->b = state->memory[offset];
-			}
-			break;
+	case 0x46: state->b = ReadFromHL();	break;
 	case 0x47: state->b = state->a; break; 
 	case 0x48: state->c = state->b; break; 
 	case 0x49: state->c = state->c; break; 
@@ -459,12 +453,7 @@ int Emulator8080::Emulate8080Op()
 	case 0x4b: state->c = state->e; break; 
 	case 0x4c: state->c = state->h; break; 
 	case 0x4d: state->c = state->l; break; 
-	case 0x4e: 
-			{
-				uint16_t offset = (state->h << 8) | (state->l);
-				state->c = state->memory[offset];
-			}
-			break;
+	case 0x4e: state->c = ReadFromHL(); break;
 	case 0x4f: state->c = state->a; break;
 	case 0x50: state->d = state->b; break;
 	case 0x51: state->d = state->c; break;
@@ -472,12 +461,7 @@ int Emulator8080::Emulate8080Op()
 	case 0x53: state->d = state->e; break;
 	case 0x54: state->d = state->h; break;
 	case 0x55: state->d = state->l; break;
-	case 0x56: 
-			{
-				uint16_t offset = (state->h << 8) | (state->l);
-				state->d = state->memory[offset];
-			}
-			break;
+	case 0x56: state->d = ReadFromHL(); break;
 	case 0x57: state->d = state->a; break; 
 	case 0x58: state->e = state->b; break; 
 	case 0x59: state->e = state->c; break; 
@@ -485,12 +469,7 @@ int Emulator8080::Emulate8080Op()
 	case 0x5b: state->e = state->e; break; 
 	case 0x5c: state->e = state->h; break; 
 	case 0x5d: state->e = state->l; break; 
-	case 0x5e: 
-			{
-				uint16_t offset = (state->h << 8) | (state->l);
-				state->e = state->memory[offset];
-			}
-			break;
+	case 0x5e: state->e = ReadFromHL(); break;
 	case 0x5f: state->e = state->a; break; 
 	case 0x60: state->h = state->b; break; 
 	case 0x61: state->h = state->c; break; 
@@ -498,12 +477,7 @@ int Emulator8080::Emulate8080Op()
 	case 0x63: state->h = state->e; break; 
 	case 0x64: state->h = state->h; break; 
 	case 0x65: state->h = state->l; break; 
-	case 0x66: 
-			{
-				uint16_t offset = (state->h << 8) | (state->l);
-				state->h = state->memory[offset];
-			}
-			break;
+	case 0x66: state->h = ReadFromHL(); break;
 	case 0x67: state->h = state->a; break;
 	case 0x68: state->l = state->b; break;
 	case 0x69: state->l = state->c; break;
@@ -511,68 +485,23 @@ int Emulator8080::Emulate8080Op()
 	case 0x6b: state->l = state->e; break;
 	case 0x6c: state->l = state->h; break;
 	case 0x6d: state->l = state->l; break;
-	case 0x6e: 
-			{
-				uint16_t offset = (state->h << 8) | (state->l);
-				state->l = state->memory[offset];
-			}
-			break;
+	case 0x6e: state->l = ReadFromHL(); break;
 	case 0x6f: state->l = state->a; break;
-	case 0x70: 
-			{
-				uint16_t offset = (state->h << 8) | (state->l);
-				WriteMemory(offset, state->b);
-			}
-			break;
-	case 0x71: 
-			{
-				uint16_t offset = (state->h << 8) | (state->l);
-				WriteMemory(offset, state->c);
-			}
-			break;
-	case 0x72: 
-			{
-				uint16_t offset = (state->h << 8) | (state->l);
-				WriteMemory(offset, state->d);
-			}
-			break;
-	case 0x73: 
-			{
-				uint16_t offset = (state->h << 8) | (state->l);
-				WriteMemory(offset, state->e);
-			}
-			break;
-	case 0x74: 
-			{
-				uint16_t offset = (state->h << 8) | (state->l);
-				WriteMemory(offset, state->h);
-			}
-			break;
-	case 0x75: 
-			{
-				uint16_t offset = (state->h << 8) | (state->l);
-				WriteMemory(offset, state->l);
-			}
-			break;
+	case 0x70: WriteToHL(state->b); break;
+	case 0x71: WriteToHL(state->c);	break;
+	case 0x72: WriteToHL(state->d);	break;
+	case 0x73: WriteToHL(state->e);	break;
+	case 0x74: WriteToHL(state->h);	break;
+	case 0x75: WriteToHL(state->l);	break;
 	case 0x76: printf("HLT"); break;
-	case 0x77: 
-			{
-				uint16_t offset = (state->h << 8) | (state->l);
-				WriteMemory(offset, state->a);
-			}
-			break;
+	case 0x77: WriteToHL(state->a); break;
 	case 0x78: state->a = state->b; break; 
 	case 0x79: state->a = state->c; break; 
 	case 0x7a: state->a = state->d; break; 
 	case 0x7b: state->a = state->e; break; 
 	case 0x7c: state->a = state->h; break; 
 	case 0x7d: state->a = state->l; break; 
-	case 0x7e: 
-	{
-		uint16_t offset = (state->h << 8) | (state->l);
-		state->a = state->memory[offset];
-	}
-	break;
+	case 0x7e: state->a = ReadFromHL(); break;
 	case 0x7f: state->a = state->a; break;
 	case 0x80: 
 	{
@@ -636,8 +565,7 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x86:
 	{
-		uint16_t offset = (state->h << 8) | (state->l);
-		uint16_t answer = (uint16_t)state->a + state->memory[offset];
+		uint16_t answer = (uint16_t)state->a + (uint16_t)ReadFromHL();
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
@@ -717,8 +645,7 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x8e:
 	{
-		uint16_t offset = (state->h << 8) | (state->l);
-		uint16_t answer = (uint16_t)state->a + state->memory[offset] + (uint16_t)state->cc.cy;
+		uint16_t answer = (uint16_t)state->a + (uint16_t)ReadFromHL() + (uint16_t)state->cc.cy;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
@@ -798,8 +725,7 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x96:
 	{
-		uint16_t offset = (state->h << 8) | (state->l);
-		uint16_t answer = (uint16_t)state->a - state->memory[offset];
+		uint16_t answer = (uint16_t)state->a - (uint16_t)ReadFromHL();
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
@@ -879,8 +805,7 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x9e:
 	{
-		uint16_t offset = (state->h << 8) | (state->l);
-		uint16_t answer = (uint16_t)state->a - state->memory[offset] - (uint16_t)state->cc.cy;
+		uint16_t answer = (uint16_t)state->a - (uint16_t)ReadFromHL() - (uint16_t)state->cc.cy;
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.cy = (answer > 0xff);
@@ -906,8 +831,7 @@ int Emulator8080::Emulate8080Op()
 	case 0xa5: state->a = state->a & state->l; LogicFlagsA();	break;
 	case 0xa6: 
 	{
-		uint16_t offset = (state->h << 8) | (state->l);
-		state->a = state->a & state->memory[offset];
+		state->a = state->a & ReadFromHL();
 		LogicFlagsA();
 	}
 	break;
@@ -920,8 +844,7 @@ int Emulator8080::Emulate8080Op()
 	case 0xad: state->a = state->a ^ state->l; LogicFlagsA();	break;
 	case 0xae: 
 	{
-		uint16_t offset = (state->h << 8) | (state->l);
-		state->a = state->a ^ state->memory[offset]; 
+		state->a = state->a ^ ReadFromHL(); 
 		LogicFlagsA();
 	}
 	break;
@@ -934,8 +857,7 @@ int Emulator8080::Emulate8080Op()
 	case 0xb5: state->a = state->a | state->l; LogicFlagsA();	break;
 	case 0xb6: 
 	{
-		uint16_t offset = (state->h << 8) | (state->l);
-		state->a = state->a | state->memory[offset]; 
+		state->a = state->a | ReadFromHL(); 
 		LogicFlagsA();	
 	}
 	break;
@@ -1002,8 +924,7 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0xbe: 
 	{
-		uint16_t offset = (state->h << 8) | (state->l);
-		uint8_t x = state->a - state->memory[offset];
+		uint8_t x = state->a - ReadFromHL();
 		state->cc.z = (x == 0);
 		state->cc.s = (0x80 == (x & 0x80));
 		state->cc.p = Parity(x, 8);
