@@ -10,6 +10,42 @@ void Emulator8080::GenerateInterrupt(int interrupt_num)
 	//state->int_enable = 0;
 }
 
+void Emulator8080::ArithmeticFlagsA(uint16_t res)
+{
+
+}
+
+void Emulator8080::FlagsZSP(uint8_t value)
+{
+}
+
+void Emulator8080::Push(uint8_t high, uint8_t low)
+{
+
+}
+
+void Emulator8080::Pop(uint8_t* high, uint8_t* low)
+{
+
+}
+
+uint8_t Emulator8080::ReadFromHL()
+{
+
+}
+
+void Emulator8080::WriteToHL(uint8_t value)
+{
+
+}
+
+void Emulator8080::WriteMemory(uint16_t address, uint8_t value)
+{
+	// don't allow to write if address is below or above work ram range
+	if (address < 0x2000 || address > 0x23ff) return; 
+	state->memory[address] = value;
+}
+
 int Emulator8080::Parity(int x, int size)
 {
 	int i;
@@ -45,7 +81,12 @@ int Emulator8080::Emulate8080Op()
 		state->pc += 2;
 	}
 	break; 
-	case 0x02: printf("STAX	B"); break;
+	case 0x02: 
+	{
+		uint16_t offset = (state->b << 8) | state->c;
+		WriteMemory(offset, state->a);
+	}
+	break;
 	case 0x03:
 	{
 		state->c++;
@@ -145,7 +186,12 @@ int Emulator8080::Emulate8080Op()
 		state->pc += 2;
 	}
 	break;
-	case 0x12: printf("STAX	D"); break;
+	case 0x12: 
+	{
+		uint16_t offset = (state->d << 8) | state->e;
+		WriteMemory(offset, state->a);
+	}
+	break;
 	case 0x13: 
 	{
 		state->e++;
@@ -325,7 +371,7 @@ int Emulator8080::Emulate8080Op()
 	case 0x32: 
 	{
 		uint16_t offset = (code[2] << 8) | (code[1]);
-		state->memory[offset] = state->a;
+		WriteMemory(offset, state->a);
 		state->pc += 2;
 	}
 	break;
@@ -337,7 +383,7 @@ int Emulator8080::Emulate8080Op()
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.p = Parity(answer & 0xff, 8);
-		state->memory[offset] = answer & 0xff;
+		WriteMemory(offset, answer & 0xff);
 	}
 	break;
 	case 0x35:
@@ -347,12 +393,12 @@ int Emulator8080::Emulate8080Op()
 		state->cc.z = ((answer & 0xff) == 0);
 		state->cc.s = ((answer & 0x80) != 0);
 		state->cc.p = Parity(answer & 0xff, 8);
-		state->memory[offset] = answer & 0xff;
+		WriteMemory(offset, answer & 0xff);
 	}
 	case 0x36: 
 	{
 		uint16_t offset = (state->h << 8) | (state->l);
-		state->memory[offset] = code[1];
+		WriteMemory(offset, code[1]);
 		state->pc++;
 	}
 	break;
@@ -475,44 +521,44 @@ int Emulator8080::Emulate8080Op()
 	case 0x70: 
 			{
 				uint16_t offset = (state->h << 8) | (state->l);
-				state->memory[offset] = state->b;
+				WriteMemory(offset, state->b);
 			}
 			break;
 	case 0x71: 
 			{
 				uint16_t offset = (state->h << 8) | (state->l);
-				state->memory[offset] = state->c;
+				WriteMemory(offset, state->c);
 			}
 			break;
 	case 0x72: 
 			{
 				uint16_t offset = (state->h << 8) | (state->l);
-				state->memory[offset] = state->d;
+				WriteMemory(offset, state->d);
 			}
 			break;
 	case 0x73: 
 			{
 				uint16_t offset = (state->h << 8) | (state->l);
-				state->memory[offset] = state->e;
+				WriteMemory(offset, state->e);
 			}
 			break;
 	case 0x74: 
 			{
 				uint16_t offset = (state->h << 8) | (state->l);
-				state->memory[offset] = state->h;
+				WriteMemory(offset, state->h);
 			}
 			break;
 	case 0x75: 
 			{
 				uint16_t offset = (state->h << 8) | (state->l);
-				state->memory[offset] = state->l;
+				WriteMemory(offset, state->l);
 			}
 			break;
 	case 0x76: printf("HLT"); break;
 	case 0x77: 
 			{
 				uint16_t offset = (state->h << 8) | (state->l);
-				state->memory[offset] = state->a;
+				WriteMemory(offset, state->a);
 			}
 			break;
 	case 0x78: state->a = state->b; break; 
@@ -1005,8 +1051,8 @@ int Emulator8080::Emulate8080Op()
 		if (0 == state->cc.z)
 		{
 			uint16_t ret = state->pc + 2;
-			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
-			state->memory[state->sp - 2] = (ret & 0xff);
+			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (ret & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -1016,8 +1062,8 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0xc5: 
 	{
-		state->memory[state->sp - 1] = state->b;
-		state->memory[state->sp - 2] = state->c;
+		WriteMemory(state->sp - 1, state->b);
+		WriteMemory(state->sp - 2, state->c);
 		state->sp = state->sp - 2;
 	}
 	break;
@@ -1059,8 +1105,8 @@ int Emulator8080::Emulate8080Op()
 		if (1 == state->cc.z)
 		{
 			uint16_t ret = state->pc + 2;
-			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
-			state->memory[state->sp - 2] = (ret & 0xff);
+			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (ret & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -1071,8 +1117,8 @@ int Emulator8080::Emulate8080Op()
 	case 0xcd:
 	{
 		uint16_t ret = state->pc + 2;
-		state->memory[state->sp - 1] = (ret >> 8) & 0xff;
-		state->memory[state->sp - 2] = (ret & 0xff);
+		WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
+		WriteMemory(state->sp - 2, (ret & 0xff));
 		state->sp = state->sp - 2;
 		state->pc = (code[2] << 8) | code[1];
 	}
@@ -1116,8 +1162,8 @@ int Emulator8080::Emulate8080Op()
 		if (0 == state->cc.cy)
 		{
 			uint16_t ret = state->pc + 2;
-			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
-			state->memory[state->sp - 2] = (ret & 0xff);
+			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (ret & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -1127,8 +1173,8 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0xd5: 
 	{
-		state->memory[state->sp - 1] = state->d;
-		state->memory[state->sp - 2] = state->e;
+		WriteMemory(state->sp - 1, state->d);
+		WriteMemory(state->sp - 2, state->e);
 		state->sp = state->sp - 2;
 	}
 	break;
@@ -1165,8 +1211,8 @@ int Emulator8080::Emulate8080Op()
 		if (1 == state->cc.cy)
 		{
 			uint16_t ret = state->pc + 2;
-			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
-			state->memory[state->sp - 2] = (ret & 0xff);
+			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (ret & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -1205,8 +1251,8 @@ int Emulator8080::Emulate8080Op()
 		if (0 == state->cc.p)
 		{
 			uint16_t ret = state->pc + 2;
-			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
-			state->memory[state->sp - 2] = (ret & 0xff);
+			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (ret & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -1216,8 +1262,8 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0xe5: 
 	{
-		state->memory[state->sp - 1] = state->h;
-		state->memory[state->sp - 2] = state->l;
+		WriteMemory(state->sp - 1, state->h);
+		WriteMemory(state->sp - 2, state->l);
 		state->sp = state->sp - 2;
 	}
 	break;
@@ -1264,8 +1310,8 @@ int Emulator8080::Emulate8080Op()
 		if (1 == state->cc.p)
 		{
 			uint16_t ret = state->pc + 2;
-			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
-			state->memory[state->sp - 2] = (ret & 0xff);
+			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (ret & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -1309,8 +1355,8 @@ int Emulator8080::Emulate8080Op()
 		if (0 == state->cc.s)
 		{
 			uint16_t ret = state->pc + 2;
-			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
-			state->memory[state->sp - 2] = (ret & 0xff);
+			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (ret & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -1320,13 +1366,13 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0xf5: 
 	{
-		state->memory[state->sp - 1] = state->a;
+		WriteMemory(state->sp - 1, state->a);
 		uint8_t psw = (state->cc.z |
 			state->cc.s << 1 |
 			state->cc.p << 2 |
 			state->cc.cy << 3 |
 			state->cc.ac << 4);
-		state->memory[state->sp - 2] = psw;
+		WriteMemory(state->sp - 2, psw);
 		state->sp = state->sp - 2;
 	}
 	break;
@@ -1354,8 +1400,8 @@ int Emulator8080::Emulate8080Op()
 		if (1 == state->cc.s)
 		{
 			uint16_t ret = state->pc + 2;
-			state->memory[state->sp - 1] = (ret >> 8) & 0xff;
-			state->memory[state->sp - 2] = (ret & 0xff);
+			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (ret & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
