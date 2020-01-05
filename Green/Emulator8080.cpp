@@ -5,9 +5,9 @@
 
 void Emulator8080::GenerateInterrupt(int interrupt_num)
 {
-	//Push(state, (state->pc & 0xFF00) >> 8, (state->pc & 01xff));
-	//state->pc = 8 * interrupt_num;
-	//state->int_enable = 0;
+	Push((state->pc & 0xFF00) >> 8, (state->pc & 0xff));
+	state->pc = 8 * interrupt_num;
+	state->int_enable = 0;
 }
 
 void Emulator8080::ArithmeticFlagsA(uint16_t result)
