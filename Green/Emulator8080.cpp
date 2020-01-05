@@ -27,12 +27,16 @@ void Emulator8080::FlagsZSP(uint8_t value)
 
 void Emulator8080::Push(uint8_t high, uint8_t low)
 {
-
+	WriteMemory(state->sp - 1, high);
+	WriteMemory(state->sp - 2, low);
+	state->sp -= 2;
 }
 
 void Emulator8080::Pop(uint8_t* high, uint8_t* low)
 {
-
+	*low = state->memory[state->sp];
+	*high = state->memory[state->sp + 1];
+	state->sp += 2;
 }
 
 uint8_t Emulator8080::ReadFromHL()
@@ -104,16 +108,14 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x04:
 	{
-		uint16_t result = (uint16_t)state->b++;
-		FlagsZSP(result);
-		state->b = result & 0xff;
+		state->b += 1;
+		FlagsZSP(state->b);
 	}
 	break;
 	case 0x05:
 	{
-		uint16_t result = (uint16_t)state->b--;
-		FlagsZSP(result);
-		state->b = result & 0xff;
+		state->b -= 1;
+		FlagsZSP(state->b);
 	}
 	break;
 	case 0x06: 
@@ -122,16 +124,22 @@ int Emulator8080::Emulate8080Op()
 		state->pc++;
 	}
 	break;
-	case 0x07: printf("RLC"); break;
+	case 0x07: 
+	{
+		uint8_t result = state->a;
+		state->a = ((result & 0x80) >> 7) | (result << 1);
+		state->cc.cy = (0x80 == (result & 0x80));
+	}
+	break;
 	case 0x08: break;
 	case 0x09: 
 	{
 		uint32_t hl = (state->h << 8) | state->l;
 		uint32_t bc = (state->b << 8) | state->c;
-		uint32_t res = hl + bc;
-		state->h = (res & 0xff00) >> 8;
-		state->l = res & 0xff;
-		state->cc.cy = ((res & 0xffff0000) > 0);
+		uint32_t result = hl + bc;
+		state->h = (result & 0xff00) >> 8;
+		state->l = result & 0xff;
+		state->cc.cy = ((result & 0xffff0000) > 0);
 	}
 	break;
 	case 0x0a: 
@@ -169,13 +177,9 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x0f: 
 	{
-		uint8_t x = state->a & code[1];
-		state->cc.z = (x == 0);
-		state->cc.s = (0x80 == (x & 0x80));
-		state->cc.p = Parity(x, 8);
-		state->cc.cy = 0;   
-		state->a = x;
-		state->pc++;  
+		uint8_t x = state->a;
+		state->a = ((x & 1) << 7) | (x >> 1);
+		state->cc.cy = (1 == (x & 1));
 	}
 	break;
 	case 0x10: break;
@@ -201,16 +205,14 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x14:
 	{
-		uint16_t result = (uint16_t)state->d++;
-		FlagsZSP(result);
-		state->d = result & 0xff;
+		state->d +=1;
+		FlagsZSP(state->d);
 	}
 	break;
 	case 0x15:
 	{
-		uint16_t result = (uint16_t)state->d--;
-		FlagsZSP(result);
-		state->d = result & 0xff;
+		state->d -= 1;
+		FlagsZSP(state->d);
 	}
 	break;
 	case 0x16:
@@ -218,16 +220,22 @@ int Emulator8080::Emulate8080Op()
 		state->d = code[1];
 		state->pc++;
 	}
-	case 0x17: printf("RAL"); break;
+	case 0x17: 
+	{
+		uint8_t result = state->a;
+		state->a = state->cc.cy | (result << 1);
+		state->cc.cy = (0x80 == (result & 0x80));
+	}
+	break;
 	case 0x18: break;
 	case 0x19:
 	{
 		uint32_t hl = (state->h << 8) | state->l;
 		uint32_t de = (state->d << 8) | state->e;
-		uint32_t res = hl + de;
-		state->h = (res & 0xff00) >> 8;
-		state->l = res & 0xff;
-		state->cc.cy = ((res & 0xffff0000) > 0);
+		uint32_t result = hl + de;
+		state->h = (result & 0xff00) >> 8;
+		state->l = result & 0xff;
+		state->cc.cy = ((result & 0xffff0000) != 0);
 	}
 	break;
 	case 0x1a: 
@@ -238,23 +246,21 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x1b: 
 	{
-		state->e--;
-		if (state->e == 0)
-			state->d--;
+		state->e -= 1;
+		if (state->e == 0xff)
+			state->d -= 1;
 	}
 	break;
 	case 0x1c:
 	{
-		uint16_t result = (uint16_t)state->e++;
-		FlagsZSP(result);
-		state->e = result & 0xff;
+		state->e += 1;
+		FlagsZSP(state->e);
 	}
 	break;
 	case 0x1d: 
 	{
-		uint16_t result = (uint16_t)state->e--;
-		FlagsZSP(result);
-		state->e = result & 0xff;
+		state->e -= 1;
+		FlagsZSP(state->e);
 	}
 	break;
 	case 0x1e: 
@@ -264,9 +270,9 @@ int Emulator8080::Emulate8080Op()
 	}
 	case 0x1f: 
 	{
-		uint8_t x = state->a;
-		state->a = (state->cc.cy << 7) | (x >> 1);
-		state->cc.cy = (1 == (x & 1));
+		uint8_t result = state->a;
+		state->a = (state->cc.cy << 7) | (result >> 1);
+		state->cc.cy = (1 == (result & 1));
 	}
 	break;
 	case 0x20: break;
@@ -277,7 +283,14 @@ int Emulator8080::Emulate8080Op()
 		state->pc += 2;
 	}
 	break;
-	case 0x22: printf("SHLD    $%02x%02x", code[2], code[1]);  break;
+	case 0x22: 
+	{
+		uint16_t offset = code[1] | (code[2] << 8);
+		WriteMemory(offset, state->l);
+		WriteMemory(offset + 1, state->h);
+		state->pc += 2;
+	}
+	break;
 	case 0x23: 
 	{
 		state->l++;
@@ -287,16 +300,14 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0x24: 
 	{
-		uint16_t result = (uint16_t)state->h++;
-		FlagsZSP(result);
-		state->h = result & 0xff;
+		state->h += 1;
+		FlagsZSP(state->h);
 	}
 	break;
 	case 0x25: 
 	{
-		uint16_t result = (uint16_t)state->h--;
-		FlagsZSP(result);
-		state->h = result & 0xff;
+		state->h -= 1;
+		FlagsZSP(state->h);
 	}
 	break;
 	case 0x26:
@@ -304,37 +315,53 @@ int Emulator8080::Emulate8080Op()
 		state->h = code[1];
 		state->pc++;
 	}
-	case 0x27: printf("DAA"); break;
+	case 0x27: 
+	{
+		if ((state->a & 0xf) > 9)
+			state->a += 6;
+		if ((state->a & 0xf0) > 0x90)
+		{
+			uint16_t result = (uint16_t)state->a + 0x60;
+			state->a = result & 0xff;
+			ArithmeticFlagsA(result);
+		}
+	}
+	break;
 	case 0x28: break;
 	case 0x29:
 	{
 		uint32_t hl = (state->h << 8) | state->l;
-		uint32_t res = hl + hl;
-		state->h = (res & 0xff00) >> 8;
-		state->l = res & 0xff;
-		state->cc.cy = ((res & 0xffff0000) > 0);
+		uint32_t result = hl + hl;
+		state->h = (result & 0xff00) >> 8;
+		state->l = result & 0xff;
+		state->cc.cy = ((result & 0xffff0000) > 0);
 	}
 	break;
-	case 0x2a: printf("LHLD    $%02x%02x", code[2], code[1]);  break;
+	case 0x2a: 
+	{
+		uint16_t offset = code[1] | (code[2] << 8);
+		state->l = state->memory[offset];
+		state->h = state->memory[offset + 1];
+		state->pc += 2;
+	}
+	break;
 	case 0x2b: 
 	{
-		state->l--;
-		if (state->l == 0)
-			state->h--;
+		state->l -= 1;
+		if (state->l == 0xff)
+			state->h -= 1;
 	}
 	break;
 	case 0x2c: 
 	{
-		uint16_t result = (uint16_t)state->l++;
-		FlagsZSP(result);
-		state->l = result & 0xff;
+		state->l += 1;
+		FlagsZSP(state->l);
 	}
 	break;
 	case 0x2d: 
 	{
-		uint16_t result = (uint16_t)state->l--;
-		FlagsZSP(result);
-		state->l = result & 0xff;
+		state->l -= 1;
+		FlagsZSP(state->l);
 	}
 	break;
 	case 0x2e:
@@ -359,7 +386,7 @@ int Emulator8080::Emulate8080Op()
 		state->pc += 2;
 	}
 	break;
-	case 0x33: printf("INX	SP"); break;
+	case 0x33: state->sp++; break;
 	case 0x34: 
 	{
 		uint16_t result = ReadFromHL() + 1;
@@ -379,11 +406,18 @@ int Emulator8080::Emulate8080Op()
 		state->pc++;
 	}
 	break;
-	case 0x37: 
-		state->cc.cy = 1;
-		break;
+	case 0x37: state->cc.cy = 1; break;
 	case 0x38: break;
-	case 0x39: printf("DAD	SP"); break;
+	case 0x39: 
+	{
+		//here
+		uint32_t hl = (state->h << 8) | state->l;
+		uint32_t res = hl + state->sp;
+		state->h = (res & 0xff00) >> 8;
+		state->l = res & 0xff;
+		state->cc.cy = ((res & 0xffff0000) > 0);
+	}
+	break;
 	case 0x3a: 
 	{
 		uint16_t offset = (code[2] << 8) | (code[1]);
@@ -391,19 +425,17 @@ int Emulator8080::Emulate8080Op()
 		state->pc += 2;
 	}
 	break;
-	case 0x3b: printf("DCX	SP"); break;
+	case 0x3b: state->sp -= 1; break;
 	case 0x3c: 
 	{
-		uint16_t result = (uint16_t)state->a++;
-		FlagsZSP(result);
-		state->a = result & 0xff;
+		state->a += 1;
+		FlagsZSP(state->a);
 	}
 	break;
 	case 0x3d:
 	{
-		uint16_t result = (uint16_t)state->a--;
-		FlagsZSP(result);
-		state->a = result & 0xff;
+		state->a -= 1;
+		FlagsZSP(state->a);
 	}
 	break;
 	case 0x3e:
@@ -411,9 +443,8 @@ int Emulator8080::Emulate8080Op()
 		state->a = code[1];
 		state->pc++;
 	}
-	case 0x3f: state->cc.cy = ~state->cc.cy;
-		break;
-	case 0x40: state->b = state->c; break; 
+	case 0x3f: state->cc.cy = 0; break;
+	case 0x40: state->b = state->b; break; 
 	case 0x41: state->b = state->c; break; 
 	case 0x42: state->b = state->d; break; 
 	case 0x43: state->b = state->e; break; 
@@ -467,7 +498,7 @@ int Emulator8080::Emulate8080Op()
 	case 0x73: WriteToHL(state->e);	break;
 	case 0x74: WriteToHL(state->h);	break;
 	case 0x75: WriteToHL(state->l);	break;
-	case 0x76: printf("HLT"); break;
+	case 0x76: break;
 	case 0x77: WriteToHL(state->a); break;
 	case 0x78: state->a = state->b; break; 
 	case 0x79: state->a = state->c; break; 
@@ -701,139 +732,88 @@ int Emulator8080::Emulate8080Op()
 		state->a = result & 0xff;
 	}
 	break;
-	case 0xa0: state->a = state->a & state->b; LogicFlagsA();	break;
-	case 0xa1: state->a = state->a & state->c; LogicFlagsA();	break;
-	case 0xa2: state->a = state->a & state->d; LogicFlagsA();	break;
-	case 0xa3: state->a = state->a & state->e; LogicFlagsA();	break;
-	case 0xa4: state->a = state->a & state->h; LogicFlagsA();	break;
-	case 0xa5: state->a = state->a & state->l; LogicFlagsA();	break;
-	case 0xa6: 
-	{
-		state->a = state->a & ReadFromHL();
-		LogicFlagsA();
-	}
-	break;
-	case 0xa7: state->a = state->a & state->a; LogicFlagsA();	break;
-	case 0xa8: state->a = state->a ^ state->b; LogicFlagsA();	break;
-	case 0xa9: state->a = state->a ^ state->c; LogicFlagsA();	break;
-	case 0xaa: state->a = state->a ^ state->d; LogicFlagsA();	break;
-	case 0xab: state->a = state->a ^ state->e; LogicFlagsA();	break;
-	case 0xac: state->a = state->a ^ state->h; LogicFlagsA();	break;
-	case 0xad: state->a = state->a ^ state->l; LogicFlagsA();	break;
-	case 0xae: 
-	{
-		state->a = state->a ^ ReadFromHL(); 
-		LogicFlagsA();
-	}
-	break;
-	case 0xaf: state->a = state->a ^ state->a; LogicFlagsA();	break;
-	case 0xb0: state->a = state->a | state->b; LogicFlagsA();	break;
-	case 0xb1: state->a = state->a | state->c; LogicFlagsA();	break;
-	case 0xb2: state->a = state->a | state->d; LogicFlagsA();	break;
-	case 0xb3: state->a = state->a | state->e; LogicFlagsA();	break;
-	case 0xb4: state->a = state->a | state->h; LogicFlagsA();	break;
-	case 0xb5: state->a = state->a | state->l; LogicFlagsA();	break;
-	case 0xb6: 
-	{
-		state->a = state->a | ReadFromHL(); 
-		LogicFlagsA();	
-	}
-	break;
+	case 0xa0: state->a = state->a & state->b; LogicFlagsA(); break;
+	case 0xa1: state->a = state->a & state->c; LogicFlagsA(); break;
+	case 0xa2: state->a = state->a & state->d; LogicFlagsA(); break;
+	case 0xa3: state->a = state->a & state->e; LogicFlagsA(); break;
+	case 0xa4: state->a = state->a & state->h; LogicFlagsA(); break;
+	case 0xa5: state->a = state->a & state->l; LogicFlagsA(); break;
+	case 0xa6: state->a = state->a & ReadFromHL(); LogicFlagsA(); break;
+	case 0xa7: state->a = state->a & state->a; LogicFlagsA(); break;
+	case 0xa8: state->a = state->a ^ state->b; LogicFlagsA(); break;
+	case 0xa9: state->a = state->a ^ state->c; LogicFlagsA(); break;
+	case 0xaa: state->a = state->a ^ state->d; LogicFlagsA(); break;
+	case 0xab: state->a = state->a ^ state->e; LogicFlagsA(); break;
+	case 0xac: state->a = state->a ^ state->h; LogicFlagsA(); break;
+	case 0xad: state->a = state->a ^ state->l; LogicFlagsA(); break;
+	case 0xae: state->a = state->a ^ ReadFromHL(); LogicFlagsA(); break;
+	case 0xaf: state->a = state->a ^ state->a; LogicFlagsA(); break;
+	case 0xb0: state->a = state->a | state->b; LogicFlagsA(); break;
+	case 0xb1: state->a = state->a | state->c; LogicFlagsA(); break;
+	case 0xb2: state->a = state->a | state->d; LogicFlagsA(); break;
+	case 0xb3: state->a = state->a | state->e; LogicFlagsA(); break;
+	case 0xb4: state->a = state->a | state->h; LogicFlagsA(); break;
+	case 0xb5: state->a = state->a | state->l; LogicFlagsA(); break;
+	case 0xb6: state->a = state->a | ReadFromHL(); LogicFlagsA(); break;
 	case 0xb7: state->a = state->a | state->a; LogicFlagsA();	break;
 	case 0xb8:
 	{
-		uint8_t x = state->a - state->b;
-		state->cc.z = (x == 0);
-		state->cc.s = (0x80 == (x & 0x80));
-		state->cc.p = Parity(x, 8);
-		state->cc.cy = (state->a < state->b);
-		state->pc++;
+		uint8_t result = state->a - state->b;
+		ArithmeticFlagsA(result);
 	}
 	break;
 	case 0xb9: 
 	{
-		uint8_t x = state->a - state->c;
-		state->cc.z = (x == 0);
-		state->cc.s = (0x80 == (x & 0x80));
-		state->cc.p = Parity(x, 8);
-		state->cc.cy = (state->a < state->c);
-		state->pc++;
+		uint8_t result = state->a - state->c;
+		ArithmeticFlagsA(result);
 	}
 	break;
 	case 0xba: 
 	{
-		uint8_t x = state->a - state->d;
-		state->cc.z = (x == 0);
-		state->cc.s = (0x80 == (x & 0x80));
-		state->cc.p = Parity(x, 8);
-		state->cc.cy = (state->a < state->d);
-		state->pc++;
+		uint8_t result = state->a - state->d;
+		ArithmeticFlagsA(result);
 	}
 	break;
 	case 0xbb: 
 	{
-		uint8_t x = state->a - state->e;
-		state->cc.z = (x == 0);
-		state->cc.s = (0x80 == (x & 0x80));
-		state->cc.p = Parity(x, 8);
-		state->cc.cy = (state->a < state->e);
-		state->pc++;
+		uint8_t result = state->a - state->e;
+		ArithmeticFlagsA(result);
 	}
 	break;
 	case 0xbc: 
 	{
-		uint8_t x = state->a - state->h;
-		state->cc.z = (x == 0);
-		state->cc.s = (0x80 == (x & 0x80));
-		state->cc.p = Parity(x, 8);
-		state->cc.cy = (state->a < state->h);
-		state->pc++;
+		uint8_t result = state->a - state->h;
+		ArithmeticFlagsA(result);
 	}
 	break;
 	case 0xbd: 
 	{
-		uint8_t x = state->a - state->l;
-		state->cc.z = (x == 0);
-		state->cc.s = (0x80 == (x & 0x80));
-		state->cc.p = Parity(x, 8);
-		state->cc.cy = (state->a < state->l);
-		state->pc++;
+		uint8_t result = state->a - state->l;
+		ArithmeticFlagsA(result);
 	}
 	break;
 	case 0xbe: 
 	{
-		uint8_t x = state->a - ReadFromHL();
-		state->cc.z = (x == 0);
-		state->cc.s = (0x80 == (x & 0x80));
-		state->cc.p = Parity(x, 8);
-		state->cc.cy = (state->a < state->b);
-		state->pc++;
+		uint8_t result = state->a - ReadFromHL();
+		ArithmeticFlagsA(result);
 	}
 	break;
 	case 0xbf: 
 	{
-		uint8_t x = state->a - state->a;
-		state->cc.z = (x == 0);
-		state->cc.s = (0x80 == (x & 0x80));
-		state->cc.p = Parity(x, 8);
-		state->cc.cy = (state->a < state->a);
-		state->pc++;
+		uint8_t result = state->a - state->a;
+		ArithmeticFlagsA(result);
 	}
 	break;
 	case 0xc0: 
 	{
 		if (0 == state->cc.z)
+		{
 			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
-		state->sp += 2;
+			state->sp += 2;
+		}
 	}
 	break;
-	case 0xc1: 
-	{
-		state->c = state->memory[state->sp];
-		state->b = state->memory[state->sp + 1];
-		state->sp += 2;
-	}
-	break;
+	case 0xc1: Pop(&state->b, &state->c); break;
 	case 0xc2: 
 	{
 		if (0 == state->cc.z)
@@ -849,9 +829,9 @@ int Emulator8080::Emulate8080Op()
 	{
 		if (0 == state->cc.z)
 		{
-			uint16_t ret = state->pc + 2;
-			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
-			WriteMemory(state->sp - 2, (ret & 0xff));
+			uint16_t result = state->pc + 2;
+			WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (result & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -859,26 +839,32 @@ int Emulator8080::Emulate8080Op()
 			state->pc += 2;
 	}
 	break;
-	case 0xc5: 
-	{
-		WriteMemory(state->sp - 1, state->b);
-		WriteMemory(state->sp - 2, state->c);
-		state->sp = state->sp - 2;
-	}
-	break;
+	case 0xc5: Push(state->b, state->c);  break;
 	case 0xc6:
 	{
 		uint16_t result = (uint16_t)state->a + (uint16_t)code[1];
-		ArithmeticFlagsA(result);
+		FlagsZSP(result & 0xff);
+		state->cc.cy = (result > 0xff);
 		state->a = result & 0xff;
+		state->pc++;
 	}
 	break;
-	case 0xc7: printf("RST	0"); break;
+	case 0xc7: 
+	{
+		uint16_t result = state->pc + 2;
+		WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+		WriteMemory(state->sp - 2, (result & 0xff));
+		state->sp = state->sp - 2;
+		state->pc = 0x0000;
+	}
+	break;
 	case 0xc8: 
 	{
-		if(1 == state->cc.z)
+		if (1 == state->cc.z)
+		{
 			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
-		state->sp += 2;
+			state->sp += 2;
+		}
 	}
 	break;
 	case 0xc9:
@@ -900,9 +886,9 @@ int Emulator8080::Emulate8080Op()
 	{
 		if (1 == state->cc.z)
 		{
-			uint16_t ret = state->pc + 2;
-			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
-			WriteMemory(state->sp - 2, (ret & 0xff));
+			uint16_t result = state->pc + 2;
+			WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (result & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -912,9 +898,9 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0xcd:
 	{
-		uint16_t ret = state->pc + 2;
-		WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
-		WriteMemory(state->sp - 2, (ret & 0xff));
+		uint16_t result = state->pc + 2;
+		WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+		WriteMemory(state->sp - 2, (result & 0xff));
 		state->sp = state->sp - 2;
 		state->pc = (code[2] << 8) | code[1];
 	}
@@ -922,25 +908,31 @@ int Emulator8080::Emulate8080Op()
 	case 0xce: 
 	{
 		uint16_t result = (uint16_t)state->a + (uint16_t)code[1] + (uint16_t)state->cc.cy;
-		ArithmeticFlagsA(result);
+		FlagsZSP(result & 0xff);
+		state->cc.cy = (result > 0xff);
 		state->a = result & 0xff;
+		state->pc++;
 	}
 	break;
-	case 0xcf: printf("RST	1"); break;
+	case 0xcf: 
+	{
+		uint16_t result = state->pc + 2;
+		WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+		WriteMemory(state->sp - 2, (result & 0xff));
+		state->sp = state->sp - 2;
+		state->pc = 0x0008;
+	}
+	break;
 	case 0xd0: 
 	{
 		if (0 == state->cc.cy)
+		{
 			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
-		state->sp += 2;
+			state->sp += 2;
+		}
 	}
 	break;
-	case 0xd1: 
-	{
-		state->e = state->memory[state->sp];
-		state->d = state->memory[state->sp + 1];
-		state->sp += 2;
-	}
-	break;
+	case 0xd1: Pop(&state->d, &state->e); break;
 	case 0xd2: 
 	{
 		if (0 == state->cc.cy)
@@ -954,9 +946,9 @@ int Emulator8080::Emulate8080Op()
 	{
 		if (0 == state->cc.cy)
 		{
-			uint16_t ret = state->pc + 2;
-			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
-			WriteMemory(state->sp - 2, (ret & 0xff));
+			uint16_t result = state->pc + 2;
+			WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (result & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -964,26 +956,32 @@ int Emulator8080::Emulate8080Op()
 			state->pc += 2;
 	}
 	break;
-	case 0xd5: 
-	{
-		WriteMemory(state->sp - 1, state->d);
-		WriteMemory(state->sp - 2, state->e);
-		state->sp = state->sp - 2;
-	}
-	break;
+	case 0xd5: Push(state->d, state->e); break;
 	case 0xd6:
 	{
-		uint16_t result = (uint16_t)state->a - (uint16_t)code[1] - (uint16_t)state->cc.cy;
-		ArithmeticFlagsA(result);
-		state->a = result & 0xff;
+		uint8_t result = state->a - code[1];
+		FlagsZSP(result & 0xff);
+		state->cc.cy = (state->a < code[1]);
+		state->a = result;
+		state->pc++;
 	}
 	break;
-	case 0xd7: printf("RST	2"); break;
+	case 0xd7:
+	{
+		uint16_t result = state->pc + 2;
+		WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+		WriteMemory(state->sp - 2, (result & 0xff));
+		state->sp = state->sp - 2;
+		state->pc = 0x10;
+	}
+	break;
 	case 0xd8: 
 	{
 		if (1 == state->cc.cy)
+		{
 			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
-		state->sp += 2;
+			state->sp += 2;
+		}
 	}
 	break;
 	case 0xd9: break;
@@ -998,11 +996,11 @@ int Emulator8080::Emulate8080Op()
 	case 0xdb: state->pc++;  break;
 	case 0xdc: 
 	{
-		if (1 == state->cc.cy)
+		if (state->cc.cy != 0)
 		{
-			uint16_t ret = state->pc + 2;
-			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
-			WriteMemory(state->sp - 2, (ret & 0xff));
+			uint16_t result = state->pc + 2;
+			WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (result & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -1011,22 +1009,34 @@ int Emulator8080::Emulate8080Op()
 	}
 	break;
 	case 0xdd: break;
-	case 0xde: printf("SBI	D8,#$%02x", code[1]);  break;
-	case 0xdf: printf("RST	3"); break;
+	case 0xde: 
+	{
+		uint16_t result = state->a - code[1] - state->cc.cy;
+		FlagsZSP(result & 0xff);
+		state->cc.cy = (result > 0xff);
+		state->a = result & 0xff;
+		state->pc++;
+	}
+	break;
+	case 0xdf:
+	{
+		uint16_t result = state->pc + 2;
+		WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+		WriteMemory(state->sp - 2, (result & 0xff));
+		state->sp = state->sp - 2;
+		state->pc = 0x18;
+	}
+	break;
 	case 0xe0: 
 	{
 		if (0 == state->cc.p)
+		{
 			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
-		state->sp += 2;
+			state->sp += 2;
+		}
 	}
 	break;
-	case 0xe1: 
-	{
-		state->l = state->memory[state->sp];
-		state->h = state->memory[state->sp + 1];
-		state->sp += 2;
-	}
-	break;
+	case 0xe1: Pop(&state->h, &state->l); break;
 	case 0xe2: 
 	{
 		if (0 == state->cc.p)
@@ -1035,14 +1045,23 @@ int Emulator8080::Emulate8080Op()
 			state->pc += 2;
 	}
 	break;
-	case 0xe3: printf("XTHL"); break;
+	case 0xe3:
+	{
+		uint8_t h = state->h;
+		uint8_t l = state->l;
+		state->l = state->memory[state->sp];
+		state->h = state->memory[state->sp + 1];
+		WriteMemory(state->sp, l);
+		WriteMemory(state->sp + 1, h);
+	}
+	break;
 	case 0xe4: 
 	{
 		if (0 == state->cc.p)
 		{
-			uint16_t ret = state->pc + 2;
-			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
-			WriteMemory(state->sp - 2, (ret & 0xff));
+			uint16_t result = state->pc + 2;
+			WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (result & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -1050,36 +1069,36 @@ int Emulator8080::Emulate8080Op()
 			state->pc += 2;
 	}
 	break;
-	case 0xe5: 
-	{
-		WriteMemory(state->sp - 1, state->h);
-		WriteMemory(state->sp - 2, state->l);
-		state->sp = state->sp - 2;
-	}
-	break;
+	case 0xe5: Push(state->h, state->l); break;
 	case 0xe6: 
 	{
-		uint8_t x = state->a & code[1];
-		state->cc.z = (x == 0);
-		state->cc.s = (0x80 == (x & 0x80));
-		state->cc.p = Parity(x, 8);
-		state->cc.cy = 0;
-		state->a = x;
+		state->a = state->a & code[1];
+		LogicFlagsA();
 		state->pc++;   
 	}
 	break;
-	case 0xe7: printf("RST	4"); break;
+	case 0xe7:
+	{
+		uint16_t result = state->pc + 2;
+		WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+		WriteMemory(state->sp - 2, (result & 0xff));
+		state->sp = state->sp - 2;
+		state->pc = 0x20;
+	}
+	break;
 	case 0xe8: 
 	{
 		if (1 == state->cc.p)
+		{
 			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
-		state->sp += 2;
+			state->sp += 2;
+		}
 	}
 	break;
-	case 0xe9: printf("PCHL"); break;
+	case 0xe9: state->pc = (state->h << 8) | state->l; break;
 	case 0xea: 
 	{
-		if (1 == state->cc.p)
+		if (0 != state->cc.p)
 			state->pc = (code[2] << 8) | code[1];
 		else
 			state->pc += 2;
@@ -1097,11 +1116,11 @@ int Emulator8080::Emulate8080Op()
 	break;
 	case 0xec: 
 	{
-		if (1 == state->cc.p)
+		if (0 != state->cc.p)
 		{
-			uint16_t ret = state->pc + 2;
-			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
-			WriteMemory(state->sp - 2, (ret & 0xff));
+			uint16_t result = state->pc + 2;
+			WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (result & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -1110,27 +1129,34 @@ int Emulator8080::Emulate8080Op()
 	}
 	break;
 	case 0xed: break;
-	case 0xee: printf("XRI	#$%02x", code[1]);  break;
-	case 0xef: printf("RST	5"); break;
+	case 0xee: 
+	{
+		uint8_t result = state->a ^ code[1];
+		FlagsZSP(result);
+		state->cc.cy = 0;
+		state->a = result;
+		state->pc++;
+	}
+	break;
+	case 0xef: 
+	{
+		uint16_t result = state->pc + 2;
+		WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+		WriteMemory(state->sp - 2, (result & 0xff));
+		state->sp = state->sp - 2;
+		state->pc = 0x28;
+	}
+	break;
 	case 0xf0: 
 	{
 		if (0 == state->cc.s)
+		{
 			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
-		state->sp += 2;
+			state->sp += 2;
+		}
 	}
 	break;
-	case 0xf1: 
-	{
-		state->a = state->memory[state->sp + 1];
-		uint8_t psw = state->memory[state->sp];
-		state->cc.z = (0x01 == (psw & 0x01));
-		state->cc.s = (0x02 == (psw & 0x02));
-		state->cc.p = (0x04 == (psw & 0x04));
-		state->cc.cy = (0x05 == (psw & 0x08));
-		state->cc.ac = (0x10 == (psw & 0x10));
-		state->sp += 2;
-	}
-	break;
+	case 0xf1: Pop(&state->a, (unsigned char*)&state->cc); break;
 	case 0xf2: 
 	{
 		if (0 == state->cc.s)
@@ -1144,9 +1170,9 @@ int Emulator8080::Emulate8080Op()
 	{
 		if (0 == state->cc.s)
 		{
-			uint16_t ret = state->pc + 2;
-			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
-			WriteMemory(state->sp - 2, (ret & 0xff));
+			uint16_t result = state->pc + 2;
+			WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (result & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -1154,28 +1180,35 @@ int Emulator8080::Emulate8080Op()
 			state->pc += 2;
 	}
 	break;
-	case 0xf5: 
+	case 0xf5: Push(state->a, *(unsigned char*)&state->cc); break;
+	case 0xf6: 
 	{
-		WriteMemory(state->sp - 1, state->a);
-		uint8_t psw = (state->cc.z |
-			state->cc.s << 1 |
-			state->cc.p << 2 |
-			state->cc.cy << 3 |
-			state->cc.ac << 4);
-		WriteMemory(state->sp - 2, psw);
-		state->sp = state->sp - 2;
+		uint8_t result = state->a | code[1];
+		FlagsZSP(result);
+		state->cc.cy = 0;
+		state->a = result;
+		state->pc++;
 	}
 	break;
-	case 0xf6: printf("ORI	#$%02x", code[1]);  break;
-	case 0xf7: printf("RST	6"); break;
+	case 0xf7: 
+	{
+		uint16_t result = state->pc + 2;
+		WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+		WriteMemory(state->sp - 2, (result & 0xff));
+		state->sp = state->sp - 2;
+		state->pc = 0x30;
+	}
+	break;
 	case 0xf8: 
 	{
-		if (1 == state->cc.s)
+		if (0 != state->cc.s)
+		{
 			state->pc = state->memory[state->sp] | (state->memory[state->sp + 1] << 8);
-		state->sp += 2;
+			state->sp += 2;
+		}
 	}
 	break;
-	case 0xf9: printf("SPHL"); break;
+	case 0xf9: state->sp = state->l | (state->h << 8); break;
 	case 0xfa: 
 	{
 		if (1 == state->cc.s)
@@ -1187,11 +1220,11 @@ int Emulator8080::Emulate8080Op()
 	case 0xfb: state->int_enable = 1;  break;
 	case 0xfc: 
 	{
-		if (1 == state->cc.s)
+		if (0 != state->cc.s)
 		{
-			uint16_t ret = state->pc + 2;
-			WriteMemory(state->sp - 1, (ret >> 8) & 0xff);
-			WriteMemory(state->sp - 2, (ret & 0xff));
+			uint16_t result = state->pc + 2;
+			WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+			WriteMemory(state->sp - 2, (result & 0xff));
 			state->sp = state->sp - 2;
 			state->pc = (code[2] << 8) | code[1];
 		}
@@ -1202,17 +1235,22 @@ int Emulator8080::Emulate8080Op()
 	case 0xfd: break;
 	case 0xfe: 
 	{
-		uint8_t x = state->a - code[1];
-		state->cc.z = (x == 0);
-		state->cc.s = (0x80 == (x & 0x80));
-		state->cc.p = Parity(x, 8);
+		uint8_t result = state->a - code[1];
+		FlagsZSP(result);
 		state->cc.cy = (state->a < code[1]);
 		state->pc++;
 	}
 	break;
-	case 0xff: printf("RST	7"); break;
+	case 0xff: 
+	{
+		uint16_t result = state->pc + 2;
+		WriteMemory(state->sp - 1, (result >> 8) & 0xff);
+		WriteMemory(state->sp - 2, (result & 0xff));
+		state->sp = state->sp - 2;
+		state->pc = 0x38;
+	}
+	break;
 	}
 
-	state->pc += 1;
 	return 0;
 }
