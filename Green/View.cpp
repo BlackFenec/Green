@@ -272,34 +272,66 @@ int View::Start(int argc, char** argv)
             // my 32bpp RGB bitmap.  We have to rotate and
             // flip the image as we go.
             //
-            unsigned char* b = (unsigned char*)buffer8888;
-            unsigned char* fb = (unsigned char*)machine->FrameBuffer();
-            for (int i = 0; i < 224; ++i)
-            {
-                for (int j = 0; j < 256; j += 8)
-                {
-                    int p;
-                    //Read the first 1-bit pixel
-                    // divide by 8 because there are 8 pixels
-                    // in a byte
-                    unsigned char pix = fb[(i * (256 / 8)) + j / 8];
 
-                    ////That makes 8 output vertical pixels
-                    //// we need to do a vertical flip
-                    //// so j needs to start at the last line
-                    //// and advance backward through the buffer
-                    int offset = (255 - j) * (224 * 4) + (i * 4);
-                    unsigned int* p1 = (unsigned int*)(&b[offset]);
-                    for (p = 0; p < 8; ++p)
+
+            //TODO CDA :Beginning of change
+            int vramPtr, b;
+
+            unsigned char* screenPtr = (unsigned char*)machine->FrameBuffer();
+
+            int x = 0;
+            int y = 255;
+
+            for (vramPtr = 0; vramPtr < 0x3FFF - 0x2400; vramPtr++)
+            {
+                for (b = 0; b < 8; b++)
+                {
+                    unsigned char pixel_val = ((readByte2(0x2400 + vramPtr) >> b) & 1) ? 0xFF : 0x00;;
+                    screenPtr[(x + y * 256) * 4] = pixel_val;
+                    screenPtr[(x + y * 256) * 4 + 1] = pixel_val;
+                    screenPtr[(x + y * 256) * 4 + 2] = pixel_val;
+                    screenPtr[(x + y * 256) * 4 + 3] = pixel_val;
+                    y--;
+
+                    if (y == -1)
                     {
-                        if (0 != (pix & (1 << p)))
-                            *p1 = RGB_ON;
-                        else
-                            *p1 = RGB_OFF;
-                        p1 -= 224;  //next line
+                        y = 255;
+                        x++;
                     }
                 }
             }
+
+            
+            /*unsigned char* b = (unsigned char*)buffer8888;
+            unsigned char* fb = (unsigned char*)machine->FrameBuffer();*/
+
+            //for (int i = 0; i < 224; ++i)
+            //{
+            //    for (int j = 0; j < 256; j += 8)
+            //    {
+            //        int p;
+            //        //Read the first 1-bit pixel
+            //        // divide by 8 because there are 8 pixels
+            //        // in a byte
+            //        unsigned char pix = fb[(i * (256 / 8)) + j / 8];
+
+            //        ////That makes 8 output vertical pixels
+            //        //// we need to do a vertical flip
+            //        //// so j needs to start at the last line
+            //        //// and advance backward through the buffer
+            //        int offset = (255 - j) * (224 * 4) + (i * 4);
+            //        unsigned int* p1 = (unsigned int*)(&b[offset]);
+            //        for (p = 0; p < 8; ++p)
+            //        {
+            //            if (0 != (pix & (1 << p)))
+            //                *p1 = RGB_ON;
+            //            else
+            //                *p1 = RGB_OFF;
+            //            p1 -= 224;  //next line
+            //        }
+            //    }
+            //}
+            //TODO CDA :End of change
 
             /*************************Temp**********************************************************/
             for (int h = 0; h < 4 * 224 * 256; h++)
