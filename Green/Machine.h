@@ -15,7 +15,7 @@ private:
 	double nextInterrupt;
 	int whichInterrupt;
 
-	boost::asio::steady_timer* emulatorTimer;
+	boost::asio::steady_timer* machineTimer;
 
 	uint8_t shift0;
 	uint8_t shift1;
@@ -29,7 +29,7 @@ public:
 	void Init(int argc, char** argv);
 
 	void DoCPU();
-	void StartEmulation();
+	void StartEmulation(boost::asio::io_context* ioContext);
 	void* FrameBuffer();
 };
 

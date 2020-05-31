@@ -27,8 +27,14 @@ private :
 
 	static Machine* machine;
 	static unsigned char* buffer8888;
+	boost::asio::io_context* io;
+	boost::asio::steady_timer* renderTimer;
+
 	static bool LoadTextureFromFile(const char* filename, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height);
 	static bool LoadTextureFromData(unsigned char* data, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height);
+
+	void Render();
+	int SetUpImgui();
 
 
 public:

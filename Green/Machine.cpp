@@ -115,16 +115,14 @@ void Machine::DoCPU()
 	}
 
 	lastTimer = now;
-	emulatorTimer->expires_at(emulatorTimer->expiry() + boost::asio::chrono::milliseconds(1));
-	emulatorTimer->async_wait(boost::bind(&Machine::DoCPU, this));
+	machineTimer->expires_at(machineTimer->expiry() + boost::asio::chrono::milliseconds(1));
+	machineTimer->async_wait(boost::bind(&Machine::DoCPU, this));
 }
 
-void Machine::StartEmulation()
+void Machine::StartEmulation(boost::asio::io_context* ioContext)
 {
-	boost::asio::io_context io;
-	emulatorTimer = new boost::asio::steady_timer(io, boost::asio::chrono::milliseconds(1));
-	emulatorTimer->async_wait(boost::bind(&Machine::DoCPU, this));
-	io.run();
+	machineTimer = new boost::asio::steady_timer(*ioContext, boost::asio::chrono::milliseconds(1));
+	machineTimer->async_wait(boost::bind(&Machine::DoCPU, this));
 }
 
 void* Machine::FrameBuffer()
