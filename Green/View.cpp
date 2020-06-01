@@ -1,5 +1,6 @@
 #include "View.h"
 #include <boost/bind.hpp>
+#include <boost/thread.hpp>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <iostream>
@@ -221,27 +222,19 @@ int View::Start(int argc, char** argv)
 
     machine->Init(argc, argv);
     buffer8888 = (unsigned char*)malloc(4 * 224 * 256);
-    io = new boost::asio::io_context();
+
+    boost::asio::io_context* ioRender = new boost::asio::io_context();
     
-    renderTimer = new boost::asio::steady_timer(*io, boost::asio::chrono::milliseconds(16));
+    renderTimer = new boost::asio::steady_timer(*ioRender, boost::asio::chrono::milliseconds(16));
     renderTimer->async_wait(boost::bind(&View::Render, this));
 
-    machine->StartEmulation(io);
-    //FIXME Can't interact with window + crash after 30 sec
-    MSG msg;
-    ZeroMemory(&msg, sizeof(msg));
-    while (msg.message != WM_QUIT)
-    {
-        if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
-        {
-            ::TranslateMessage(&msg);
-            ::DispatchMessage(&msg);
-            continue;
-        }
-       
-        io->run();
-           
-    }
+    boost::asio::io_context* ioCpu = new boost::asio::io_context();
+    machine->StartEmulation(ioCpu);
+
+    boost::thread_group threads;
+    threads.create_thread(boost::bind(&boost::asio::io_context::run, ioCpu));
+    ioRender->run();
+    threads.join_all();
 
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
@@ -256,6 +249,16 @@ int View::Start(int argc, char** argv)
 
 void View::Render()
 {
+    MSG msg;
+    ZeroMemory(&msg, sizeof(msg));
+    while (msg.message != WM_QUIT)
+    {
+        if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
+        {
+            ::TranslateMessage(&msg);
+            ::DispatchMessage(&msg);
+            continue;
+        }
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
@@ -275,7 +278,7 @@ void View::Render()
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
         g_pSwapChain->Present(1, 0);   
-
+    }
     renderTimer->expires_at(renderTimer->expiry() + boost::asio::chrono::milliseconds(16));
     renderTimer->async_wait(boost::bind(&View::Render, this));
 }
