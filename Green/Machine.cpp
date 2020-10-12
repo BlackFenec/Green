@@ -65,7 +65,6 @@ void Machine::Init(int argc, char** argv)
 
 void Machine::DoCPU()
 {
-	std::cout << "CPU" << std::endl;
 	double now = GetTickCount64();
 
 	if (lastTimer == 0.0)
