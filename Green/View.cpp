@@ -272,6 +272,81 @@ void View::Render()
     }
 
 
+
+    //TODO Readrealmemory
+
+
+    /**************************************************************/
+    //Translate the 1-bit space invaders frame buffer into
+    // my 32bpp RGB bitmap.  We have to rotate and
+    // flip the image as we go.
+    //
+    unsigned char* b = (unsigned char*)buffer8888;
+    unsigned char* fb = (unsigned char*)machine->FrameBuffer();
+    for (int i = 0; i < 224; ++i)
+    {
+        for (int j = 0; j < 256; j += 8)
+        {
+            int p;
+            //Read the first 1-bit pixel
+            // divide by 8 because there are 8 pixels
+            // in a byte
+            unsigned char pix = fb[(i * (256 / 8)) + j / 8];
+
+            ////That makes 8 output vertical pixels
+            //// we need to do a vertical flip
+            //// so j needs to start at the last line
+            //// and advance backward through the buffer
+            int offset = (255 - j) * (224 * 4) + (i * 4);
+            unsigned int* p1 = (unsigned int*)(&b[offset]);
+            for (p = 0; p < 8; ++p)
+            {
+                if (0 != (pix & (1 << p)))
+                    *p1 = RGB_ON;
+                else
+                    *p1 = RGB_OFF;
+                p1 -= 224;  //next line
+            }
+        }
+    }
+
+    /*************************Temp**********************************************************/
+    //for (int h = 0; h < 4 * 224 * 256; h++)
+    //{
+    //    std::cout << b[h];
+    //    /*if (b[h] == '\0')
+    //        bool tatata = true;*/
+    //}
+    ///**************************************************************************************/
+    //std::cout << std::endl << std::endl;
+
+
+
+
+
+
+
+
+
+    /*On disk image section*/
+
+    int my_image_width = 0;
+    int my_image_height = 0;
+    ID3D11ShaderResourceView* my_texture = NULL;
+    bool ret = LoadTextureFromFile("D:\\Users\\Cindy\\Desktop\\MyImage01.jpg", &my_texture, &my_image_width, &my_image_height);
+    IM_ASSERT(ret);
+
+    {
+        ImGui::Begin("DirectX11 Texture Test");
+        ImGui::Text("pointer = %p", my_texture);
+        ImGui::Text("size = %d x %d", my_image_width, my_image_height);
+        ImGui::Image((void*)my_texture, ImVec2(my_image_width, my_image_height));
+        ImGui::End();
+    }
+
+    /*On disk image section*/
+
+
         ImGui::Render();
         g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, NULL);
         g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, (float*)&ImVec4(0.45f, 0.55f, 0.60f, 1.00f));

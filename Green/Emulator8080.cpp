@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
 
 unsigned char cycles8080[] = {
 	4, 10, 7, 5, 5, 5, 7, 4, 4, 10, 7, 5, 5, 5, 7, 4, //0x00..0x0f
@@ -104,7 +105,13 @@ void Emulator8080::LogicFlagsA()
 
 int Emulator8080::Emulate8080Op()
 {
+	//Problem is here. Files were read correctly and put into memory
+	//However value put in code variable is wrong.
+	//If it still doesnt work, check for case on value x00 , which is the first three instructions of the file
+	//because state->pc doesnt seems to be move
 	unsigned char* code = &state->memory[state->pc];
+
+	state->pc += 1;
 
 	switch (*code)
 	{
