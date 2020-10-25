@@ -311,12 +311,13 @@ void View::Render()
     }
 
     /*************************Temp**********************************************************/
-    //for (int h = 0; h < 4 * 224 * 256; h++)
-    //{
-    //    std::cout << b[h];
-    //    /*if (b[h] == '\0')
-    //        bool tatata = true;*/
-    //}
+    //TODO CDA : opcode is okay but image still empty
+    for (int h = 0; h < 4 * 224 * 256; h++)
+    {
+        std::cout << b[h];
+        if (b[h] != '\0')
+            bool tatata = true;
+    }
     ///**************************************************************************************/
     //std::cout << std::endl << std::endl;
 

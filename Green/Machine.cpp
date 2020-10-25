@@ -52,14 +52,6 @@ void Machine::ReadFile(std::string filename, uint32_t memoffset)
 
 	uint8_t* buffer = &emulator->State()->memory[memoffset];
 	file.read((char*)buffer, length);
-
-	for (int i = 0; i < length; ++i)
-	{
-		if (buffer[i] != 0)
-			std::cout << "yoko";
-	}
-
-
 	file.close();
 }
 
